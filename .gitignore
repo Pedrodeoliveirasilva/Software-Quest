@@ -4,6 +4,6 @@
 node_modules/
 coverage/
 # dados dos alunos e senhas protegidas: nunca envie para o GitHub
-dados/
+/dados/
 *.backup.json
 backup*.json

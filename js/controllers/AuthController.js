@@ -26,6 +26,7 @@ SQ.controllers.Auth = (function () {
   };
 
   function mostrar(raiz, aba = 'aluno', modo = 'entrar') {
+    window.scrollTo(0, 0);
     SQ.views.Login(raiz, {
       aba,
       modo,

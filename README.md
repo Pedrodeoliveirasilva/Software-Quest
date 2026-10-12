@@ -266,6 +266,7 @@ O sistema não coleta nome completo, e-mail nem outros dados pessoais dos alunos
 - **Tela "Inicie o servidor do Software Quest":** o servidor não está rodando ou a página foi aberta direto pelo arquivo. Aperte F5 no VS Code (ou rode `node servidor.js`) e acesse `http://localhost:3000`.
 - **Os alunos não conseguem abrir o endereço da rede:** confira se estão no mesmo Wi-Fi e se o firewall do computador permite o Node.js em redes privadas.
 - **O Render mostra erro ao iniciar, citando o banco:** confira se a `DATABASE_URL` foi colada completa, de `postgresql://` até `sslmode=require`. Para corrigir, abra o serviço no Render, vá em **Environment**, edite o valor e salve (ele reinicia sozinho). Os detalhes do erro aparecem em **Logs**.
+- **No site publicado, o mapa fica em branco depois de entrar:** algum arquivo do jogo não chegou ao GitHub. Rode `npm test`: o teste "nenhum arquivo do site é ignorado pelo Git" aponta quais arquivos estão faltando. Confira também a aba **Actions** do repositório, que mostra ✗ quando isso acontece.
 - **O link do Render demora para abrir:** é o servidor acordando depois de 15 minutos sem acesso; espere cerca de um minuto.
 - **Tela em branco depois de configurar o Firebase:** confira se o `firebaseConfig` foi colado sem `const firebaseConfig =` e com a vírgula depois da chave de fechamento. Aperte F12 e veja a mensagem em vermelho na aba Console.
 - **"Sem permissão para esta ação":** as regras do `firestore.rules` não foram publicadas no passo 3.

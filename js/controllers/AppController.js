@@ -46,6 +46,8 @@ SQ.controllers.App = (function () {
     overlay.fechar(true);
     if (ativo && ativo.destruir) ativo.destruir();
     ativo = null;
+    // Cada tela nova começa do topo (no celular, o cadastro é longo e a página ficaria rolada para baixo)
+    window.scrollTo(0, 0);
     if (!s) return SQ.controllers.Auth.mostrar(raiz());
     if (s.papel === 'erro') return erroSessao(s.erro);
     if (s.papel === 'incompleto') {

@@ -20,7 +20,7 @@ SQ.controllers.aluno.Missao = function (ctx) {
     const janela = overlay.abrir(m.titulo, {
       antesDeFechar: async () => terminou || confirm('Sair da missão agora? O progresso desta missão será perdido.')
     });
-    const area = SQ.dom.el('div');
+    const area = SQ.html.elemento`<div></div>`;
     janela.corpo.replaceChildren(area);
 
     function mostrarDesafio() {

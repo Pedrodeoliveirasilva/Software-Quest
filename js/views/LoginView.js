@@ -2,424 +2,417 @@
    VIEW / LOGIN — telas de entrada e cadastro de alunos e professores
    Coleta os valores dos formulários e chama os handlers do AuthController,
    que validam e respondem com sucesso ou com um erro { message, campo }.
+   Campos marcados com data-campo="nome" recebem o foco quando o erro é deles.
    ================================================================= */
 window.SQ = window.SQ || {};
 SQ.views = SQ.views || {};
 
 SQ.views.Login = function (raiz, { aba, modo, handlers }) {
-  const el = SQ.dom.el,
-    U = SQ.util;
-  const erro = el('p', { class: 'error-msg', role: 'alert' });
-  const ok = el('p', { class: 'ok-msg', role: 'status' });
+  const html = SQ.html;
+  const U = SQ.util;
+  const erro = html.elemento`<p class="error-msg" role="alert"></p>`;
+  const ok = html.elemento`<p class="ok-msg" role="status"></p>`;
   const campos = {};
-  const enviando = (form, v) => form.querySelectorAll('button, input, select').forEach(x => (x.disabled = v));
 
-  /* Executa um handler, mostrando o erro e focando o campo indicado. */
+  /* =================================================================
+     Ajudantes dos formulários
+     ================================================================= */
+
+  /** Guarda os campos marcados com data-campo, para focar o campo com erro. */
+  function registrarCampos(raizDoFormulario) {
+    raizDoFormulario.querySelectorAll('[data-campo]').forEach(c => {
+      campos[c.dataset.campo] = c;
+      c.removeAttribute('data-campo');
+    });
+  }
+
+  /** Executa um handler, mostrando o erro e focando o campo indicado. */
   async function executar(form, acao) {
+    const travar = sim => form.querySelectorAll('button, input, select').forEach(x => (x.disabled = sim));
     erro.textContent = '';
     ok.textContent = '';
-    enviando(form, true);
+    travar(true);
     try {
-      const r = await acao();
-      enviando(form, false);
-      return r;
+      const resultado = await acao();
+      travar(false);
+      return resultado;
     } catch (x) {
       erro.textContent = x.message;
-      enviando(form, false);
+      travar(false);
       if (x.campo && campos[x.campo]) campos[x.campo].focus();
       throw x;
     }
   }
-  const termos = () => {
-    const cb = el('input', { type: 'checkbox', id: 'aceite' });
-    campos.aceite = cb;
-    return {
-      cb,
-      linha: el(
-        'label',
-        { class: 'check-line', for: 'aceite' },
-        cb,
-        el(
-          'span',
-          {},
-          'Li e aceito a ',
-          el('button', {
-            type: 'button',
-            class: 'link inline',
-            onclick: handlers.privacidade,
-            text: 'política de privacidade e os termos de uso'
-          }),
-          '.'
-        )
-      )
-    };
-  };
-  const campoCodigo = (id, valor = '') =>
-    el('input', {
-      id,
-      maxlength: 7,
-      autocomplete: 'off',
-      placeholder: 'QX7-42B',
-      value: valor,
-      class: 'input-codigo',
-      oninput: e => {
-        const v = U.normalizarCodigo(e.target.value).slice(0, 6);
-        e.target.value = v.length > 3 ? v.slice(0, 3) + '-' + v.slice(3) : v;
-      }
-    });
-  const campo = (id, rotulo, input, dica) => {
-    campos[id] = input;
-    return el(
-      'div',
-      { class: 'field' },
-      el('label', { for: input.id, text: rotulo }),
-      input,
-      dica ? el('span', { class: 'hint', text: dica }) : null
-    );
-  };
 
-  /* ----- aluno: entrar ----- */
-  function entrarAluno() {
-    const cod = campoCodigo('l-cod');
-    const usu = el('input', { id: 'l-usu', maxlength: 20, autocomplete: 'username', autocapitalize: 'none' });
-    const sen = el('input', { id: 'l-sen', type: 'password', autocomplete: 'current-password' });
-    const f = el(
-      'form',
-      {
-        class: 'form-grid',
-        onsubmit: e => {
-          e.preventDefault();
-          executar(f, () => handlers.entrarAluno({ codigo: cod.value, usuario: usu.value, senha: sen.value })).catch(
-            () => {}
-          );
-        }
-      },
-      campo('codigo', 'Código da turma', cod),
-      campo('usuario', 'Nome de usuário', usu),
-      campo('senha', 'Senha', sen),
-      erro,
-      el('button', { class: 'btn block', type: 'submit', text: 'Entrar' }),
-      el('button', {
-        class: 'link',
-        type: 'button',
-        onclick: () => handlers.irPara('aluno', 'cadastro'),
-        text: 'Primeiro acesso? Crie sua conta'
-      }),
-      el('p', {
-        class: 'muted',
-        style: { fontSize: '.88rem', margin: 0 },
-        text: 'Esqueceu a senha? Fale com seu professor.'
-      })
-    );
-    setTimeout(() => cod.focus(), 30);
-    return f;
+  /** Formata o código da turma enquanto a pessoa digita (QX7-42B). */
+  function formatarCodigo(evento) {
+    const v = U.normalizarCodigo(evento.target.value).slice(0, 6);
+    evento.target.value = v.length > 3 ? v.slice(0, 3) + '-' + v.slice(3) : v;
   }
 
-  /* ----- aluno: cadastro em duas etapas (código da turma, depois os dados) ----- */
+  const dica = texto => html`<span class="hint">${texto}</span>`;
+
+  const campoCodigo = (id, dicaDoCampo) =>
+    html` <div class="field">
+      <label for="${id}">Código da turma</label>
+      <input
+        id="${id}"
+        maxlength="7"
+        autocomplete="off"
+        placeholder="QX7-42B"
+        value=""
+        class="input-codigo"
+        oninput=${formatarCodigo}
+        data-campo="codigo"
+      />
+      ${dicaDoCampo ? dica(dicaDoCampo) : null}
+    </div>`;
+
+  const aceiteDosTermos = () =>
+    html` <label class="check-line" for="aceite">
+      <input type="checkbox" id="aceite" data-campo="aceite" />
+      <span
+        >Li e aceito a
+        <button type="button" class="link inline" onclick=${handlers.privacidade}>
+          política de privacidade e os termos de uso</button
+        >.</span
+      >
+    </label>`;
+
+  const ignorar = () => {};
+
+  /* =================================================================
+     Aluno: entrar
+     ================================================================= */
+  function entrarAluno() {
+    const form = html.elemento`
+      <form class="form-grid" onsubmit=${enviar}>
+        ${campoCodigo('l-cod')}
+        <div class="field">
+          <label for="l-usu">Nome de usuário</label>
+          <input id="l-usu" maxlength="20" autocomplete="username" autocapitalize="none" data-campo="usuario">
+        </div>
+        <div class="field">
+          <label for="l-sen">Senha</label>
+          <input id="l-sen" type="password" autocomplete="current-password" data-campo="senha">
+        </div>
+        ${erro}
+        <button class="btn block" type="submit">Entrar</button>
+        <button class="link" type="button" onclick=${() => handlers.irPara('aluno', 'cadastro')}>Primeiro acesso? Crie sua conta</button>
+        <p class="muted" style="font-size: .88rem; margin: 0">Esqueceu a senha? Fale com seu professor.</p>
+      </form>`;
+    registrarCampos(form);
+
+    function enviar(evento) {
+      evento.preventDefault();
+      const dados = { codigo: campos.codigo.value, usuario: campos.usuario.value, senha: campos.senha.value };
+      executar(form, () => handlers.entrarAluno(dados)).catch(ignorar);
+    }
+
+    setTimeout(() => campos.codigo.focus(), 30);
+    return form;
+  }
+
+  /* =================================================================
+     Aluno: primeiro acesso, em duas etapas (código da turma, depois os dados)
+     ================================================================= */
   function cadastroAluno() {
-    const cod = campoCodigo('c-cod');
-    const etapa2 = el('div', { class: 'form-grid' });
-    const continuar = el('button', { class: 'btn block', type: 'button', text: 'Continuar' });
     let turma = null;
-    const f = el(
-      'form',
-      {
-        class: 'form-grid',
-        onsubmit: e => {
-          e.preventDefault();
-          if (!turma) continuar.click();
-        }
-      },
-      campo('codigo', 'Código da turma', cod, 'Seu professor passa esse código.'),
-      erro,
-      continuar,
-      etapa2,
-      el('button', {
-        class: 'link',
-        type: 'button',
-        onclick: () => handlers.irPara('aluno', 'entrar'),
-        text: 'Já tenho conta'
-      })
-    );
-    continuar.addEventListener('click', () =>
-      executar(f, () => handlers.buscarTurma(cod.value))
+
+    const form = html.elemento`
+      <form class="form-grid" onsubmit=${enviar}>
+        ${campoCodigo('c-cod', 'Seu professor passa esse código.')}
+        ${erro}
+        <button class="btn block" type="button" onclick=${buscarTurma} data-ref="continuar">Continuar</button>
+        <div class="form-grid" data-ref="etapa2"></div>
+        <button class="link" type="button" onclick=${() => handlers.irPara('aluno', 'entrar')}>Já tenho conta</button>
+      </form>`;
+    const refs = html.refs(form);
+    registrarCampos(form);
+    const campoDoCodigo = campos.codigo;
+
+    function enviar(evento) {
+      evento.preventDefault();
+      if (!turma) buscarTurma();
+    }
+
+    function buscarTurma() {
+      executar(form, () => handlers.buscarTurma(campoDoCodigo.value))
         .then(t => {
           turma = t;
-          cod.disabled = true;
-          continuar.remove();
-          etapa(t);
+          campoDoCodigo.disabled = true;
+          refs.continuar.remove();
+          mostrarDadosDoAluno(t);
         })
-        .catch(() => {})
-    );
+        .catch(ignorar);
+    }
 
-    function etapa(t) {
-      let cor = U.coresAvatar[0],
-        classe = 'frontend',
-        foto = null;
-      const C = SQ.views.componentes;
-      const usu = el('input', {
-        id: 'c-usu',
-        maxlength: 20,
-        autocomplete: 'username',
-        autocapitalize: 'none',
-        placeholder: 'ex.: ana_b'
-      });
-      const ap = el('input', { id: 'c-ap', maxlength: 16, autocomplete: 'off', placeholder: 'Ex.: Coruja Veloz' });
-      const pesq = t.pesquisa
-        ? el('input', {
-            id: 'c-pesq',
-            maxlength: 3,
-            autocomplete: 'off',
-            placeholder: 'P07',
-            style: { textTransform: 'uppercase' }
-          })
-        : null;
-      const s1 = el('input', { id: 'c-s1', type: 'password', autocomplete: 'new-password' });
-      const s2 = el('input', { id: 'c-s2', type: 'password', autocomplete: 'new-password' });
-      const tr = termos();
-      const cores = C.seletorCor(cor, c => {
-        cor = c;
-      });
-      const classes = C.seletorClasse(classe, c => {
-        classe = c;
-      });
+    /* ---------- Etapa 2: dados do aluno ---------- */
+    function mostrarDadosDoAluno(t) {
+      const componentes = SQ.views.componentes;
+      let cor = U.coresAvatar[0];
+      let classe = 'frontend';
+      let foto = null;
+      const professor = [t.escola, t.professorNome && 'Prof. ' + t.professorNome].filter(Boolean).join(' · ');
+
       // Foto opcional, só quando o professor liberou fotos na turma
       const seletorFoto = t.fotos
-        ? C.seletorFoto({
+        ? componentes.seletorFoto({
             foto: null,
             cor,
             texto: 'A',
             dica: 'Opcional. Use uma imagem que represente você: não precisa ser uma foto do seu rosto.',
-            onMudar: async f => {
-              foto = f;
-            }
+            onMudar: async f => (foto = f)
           })
         : null;
-      const criar = el('button', { class: 'btn block', type: 'button', text: 'Criar conta e jogar' });
-      criar.addEventListener('click', () =>
-        executar(f, () =>
-          handlers.cadastrarAluno({
-            turma,
-            usuario: usu.value,
-            apelido: ap.value,
-            codigoPesquisa: pesq ? pesq.value : null,
-            senha: s1.value,
-            senha2: s2.value,
-            aceite: tr.cb.checked,
-            avatar: { cor, classe, foto }
-          })
-        ).catch(() => {
-          cod.disabled = true;
-        })
+
+      refs.etapa2.replaceChildren(
+        html` <div class="turma-ok">
+            <strong>${t.nome}</strong>
+            <span>${professor}</span>
+          </div>
+          <div class="field">
+            <label for="c-usu">Nome de usuário</label>
+            <input
+              id="c-usu"
+              maxlength="20"
+              autocomplete="username"
+              autocapitalize="none"
+              placeholder="ex.: ana_b"
+              data-campo="usuario"
+            />
+            ${dica('Você vai usar para entrar. Letras sem acento, números ou _.')}
+          </div>
+          <div class="field">
+            <label for="c-ap">Apelido no jogo</label>
+            <input id="c-ap" maxlength="16" autocomplete="off" placeholder="Ex.: Coruja Veloz" data-campo="apelido" />
+            ${dica('Aparece no ranking da turma. Não use seu nome completo.')}
+          </div>
+          ${
+            t.pesquisa
+              ? html` <div class="field">
+                  <label for="c-pesq">Código de participante da pesquisa</label>
+                  <input
+                    id="c-pesq"
+                    maxlength="3"
+                    autocomplete="off"
+                    placeholder="P07"
+                    style="text-transform: uppercase"
+                    data-campo="codigoPesquisa"
+                  />
+                  ${dica('O mesmo código usado no pré-teste (ex.: P07).')}
+                </div>`
+              : null
+          }
+          ${
+            seletorFoto
+              ? html` <div class="field">
+                  <label>Foto do personagem</label>
+                  ${seletorFoto}
+                </div>`
+              : null
+          }
+          <div class="field">
+            <label>Cor do personagem</label>
+            ${componentes.seletorCor(cor, c => (cor = c))}
+          </div>
+          <div class="field">
+            <label>Especialidade</label>
+            ${componentes.seletorClasse(classe, c => (classe = c))}
+          </div>
+          <div class="field">
+            <label for="c-s1">Crie uma senha</label>
+            <input id="c-s1" type="password" autocomplete="new-password" data-campo="senha" />
+            ${dica('Pelo menos 6 caracteres. Anote para não esquecer.')}
+          </div>
+          <div class="field">
+            <label for="c-s2">Repita a senha</label>
+            <input id="c-s2" type="password" autocomplete="new-password" data-campo="senha2" />
+          </div>
+          ${aceiteDosTermos()} ${erro}
+          <button class="btn block" type="button" onclick=${criarConta}>Criar conta e jogar</button>`
       );
-      etapa2.replaceChildren(
-        el(
-          'div',
-          { class: 'turma-ok' },
-          el('strong', { text: t.nome }),
-          el('span', { text: [t.escola, t.professorNome && 'Prof. ' + t.professorNome].filter(Boolean).join(' · ') })
-        ),
-        campo('usuario', 'Nome de usuário', usu, 'Você vai usar para entrar. Letras sem acento, números ou _.'),
-        campo('apelido', 'Apelido no jogo', ap, 'Aparece no ranking da turma. Não use seu nome completo.'),
-        pesq
-          ? campo(
-              'codigoPesquisa',
-              'Código de participante da pesquisa',
-              pesq,
-              'O mesmo código usado no pré-teste (ex.: P07).'
-            )
-          : null,
-        seletorFoto ? el('div', { class: 'field' }, el('label', { text: 'Foto do personagem' }), seletorFoto) : null,
-        el('div', { class: 'field' }, el('label', { text: 'Cor do personagem' }), cores),
-        el('div', { class: 'field' }, el('label', { text: 'Especialidade' }), classes),
-        campo('senha', 'Crie uma senha', s1, 'Pelo menos 6 caracteres. Anote para não esquecer.'),
-        campo('senha2', 'Repita a senha', s2),
-        tr.linha,
-        erro,
-        criar
-      );
-      setTimeout(() => usu.focus(), 30);
+      registrarCampos(refs.etapa2);
+
+      function criarConta() {
+        const dados = {
+          turma,
+          usuario: campos.usuario.value,
+          apelido: campos.apelido.value,
+          codigoPesquisa: campos.codigoPesquisa ? campos.codigoPesquisa.value : null,
+          senha: campos.senha.value,
+          senha2: campos.senha2.value,
+          aceite: campos.aceite.checked,
+          avatar: { cor, classe, foto }
+        };
+        executar(form, () => handlers.cadastrarAluno(dados)).catch(() => (campoDoCodigo.disabled = true));
+      }
+
+      setTimeout(() => campos.usuario.focus(), 30);
     }
-    setTimeout(() => cod.focus(), 30);
-    return f;
+
+    setTimeout(() => campoDoCodigo.focus(), 30);
+    return form;
   }
 
-  /* ----- professor ----- */
+  /* =================================================================
+     Professor: entrar
+     ================================================================= */
   function entrarProfessor() {
-    const em = el('input', { id: 'p-em', type: 'email', autocomplete: 'username' });
-    const sen = el('input', { id: 'p-sen', type: 'password', autocomplete: 'current-password' });
-    const f = el(
-      'form',
-      {
-        class: 'form-grid',
-        onsubmit: e => {
-          e.preventDefault();
-          executar(f, () => handlers.entrarProfessor({ email: em.value, senha: sen.value })).catch(() => {});
-        }
-      },
-      campo('email', 'E-mail', em),
-      campo('senha', 'Senha', sen),
-      erro,
-      el('button', { class: 'btn block', type: 'submit', text: 'Entrar no painel' }),
-      el('button', {
-        class: 'link',
-        type: 'button',
-        onclick: () => handlers.irPara('professor', 'cadastro'),
-        text: 'Ainda não tem conta? Cadastre-se'
-      }),
-      el('button', {
-        class: 'link',
-        type: 'button',
-        onclick: () => handlers.irPara('professor', 'recuperar'),
-        text: 'Esqueci minha senha'
-      })
-    );
-    setTimeout(() => em.focus(), 30);
-    return f;
+    const form = html.elemento`
+      <form class="form-grid" onsubmit=${enviar}>
+        <div class="field">
+          <label for="p-em">E-mail</label>
+          <input id="p-em" type="email" autocomplete="username" data-campo="email">
+        </div>
+        <div class="field">
+          <label for="p-sen">Senha</label>
+          <input id="p-sen" type="password" autocomplete="current-password" data-campo="senha">
+        </div>
+        ${erro}
+        <button class="btn block" type="submit">Entrar no painel</button>
+        <button class="link" type="button" onclick=${() => handlers.irPara('professor', 'cadastro')}>Ainda não tem conta? Cadastre-se</button>
+        <button class="link" type="button" onclick=${() => handlers.irPara('professor', 'recuperar')}>Esqueci minha senha</button>
+      </form>`;
+    registrarCampos(form);
+
+    function enviar(evento) {
+      evento.preventDefault();
+      const dados = { email: campos.email.value, senha: campos.senha.value };
+      executar(form, () => handlers.entrarProfessor(dados)).catch(ignorar);
+    }
+
+    setTimeout(() => campos.email.focus(), 30);
+    return form;
   }
 
+  /* =================================================================
+     Professor: cadastro
+     ================================================================= */
   function cadastroProfessor() {
-    const nome = el('input', { id: 'pc-nome', maxlength: 80, autocomplete: 'name' });
-    const escola = el('input', { id: 'pc-escola', maxlength: 80, autocomplete: 'organization' });
-    const em = el('input', { id: 'pc-em', type: 'email', autocomplete: 'email' });
-    const s1 = el('input', { id: 'pc-s1', type: 'password', autocomplete: 'new-password' });
-    const s2 = el('input', { id: 'pc-s2', type: 'password', autocomplete: 'new-password' });
-    const tr = termos();
-    const f = el(
-      'form',
-      {
-        class: 'form-grid',
-        onsubmit: e => {
-          e.preventDefault();
-          executar(f, () =>
-            handlers.cadastrarProfessor({
-              nome: nome.value,
-              escola: escola.value,
-              email: em.value,
-              senha: s1.value,
-              senha2: s2.value,
-              aceite: tr.cb.checked
-            })
-          ).catch(() => {});
-        }
-      },
-      campo('nome', 'Seu nome', nome),
-      campo('escola', 'Escola', escola),
-      campo('email', 'E-mail', em, 'Usado para entrar e para recuperar a senha.'),
-      campo('senha', 'Crie uma senha', s1),
-      campo('senha2', 'Repita a senha', s2),
-      tr.linha,
-      erro,
-      el('button', { class: 'btn block', type: 'submit', text: 'Criar conta de professor' }),
-      el('button', {
-        class: 'link',
-        type: 'button',
-        onclick: () => handlers.irPara('professor', 'entrar'),
-        text: 'Já tenho conta'
-      })
-    );
-    setTimeout(() => nome.focus(), 30);
-    return f;
+    const form = html.elemento`
+      <form class="form-grid" onsubmit=${enviar}>
+        <div class="field">
+          <label for="pc-nome">Seu nome</label>
+          <input id="pc-nome" maxlength="80" autocomplete="name" data-campo="nome">
+        </div>
+        <div class="field">
+          <label for="pc-escola">Escola</label>
+          <input id="pc-escola" maxlength="80" autocomplete="organization" data-campo="escola">
+        </div>
+        <div class="field">
+          <label for="pc-em">E-mail</label>
+          <input id="pc-em" type="email" autocomplete="email" data-campo="email">
+          ${dica('Usado para entrar e para recuperar a senha.')}
+        </div>
+        <div class="field">
+          <label for="pc-s1">Crie uma senha</label>
+          <input id="pc-s1" type="password" autocomplete="new-password" data-campo="senha">
+        </div>
+        <div class="field">
+          <label for="pc-s2">Repita a senha</label>
+          <input id="pc-s2" type="password" autocomplete="new-password" data-campo="senha2">
+        </div>
+        ${aceiteDosTermos()}
+        ${erro}
+        <button class="btn block" type="submit">Criar conta de professor</button>
+        <button class="link" type="button" onclick=${() => handlers.irPara('professor', 'entrar')}>Já tenho conta</button>
+      </form>`;
+    registrarCampos(form);
+
+    function enviar(evento) {
+      evento.preventDefault();
+      const dados = {
+        nome: campos.nome.value,
+        escola: campos.escola.value,
+        email: campos.email.value,
+        senha: campos.senha.value,
+        senha2: campos.senha2.value,
+        aceite: campos.aceite.checked
+      };
+      executar(form, () => handlers.cadastrarProfessor(dados)).catch(ignorar);
+    }
+
+    setTimeout(() => campos.nome.focus(), 30);
+    return form;
   }
 
+  /* =================================================================
+     Professor: recuperar senha
+     ================================================================= */
   function recuperar() {
-    const em = el('input', { id: 'pr-em', type: 'email', autocomplete: 'email' });
-    const f = el(
-      'form',
-      {
-        class: 'form-grid',
-        onsubmit: e => {
-          e.preventDefault();
-          executar(f, () => handlers.recuperarSenha(em.value))
-            .then(msg => {
-              ok.textContent = msg;
-            })
-            .catch(() => {});
-        }
-      },
-      el('p', {
-        class: 'muted',
-        style: { margin: 0 },
-        text: 'Informe o e-mail da sua conta de professor. Vamos enviar um link para você criar uma nova senha.'
-      }),
-      campo('email', 'E-mail', em),
-      erro,
-      ok,
-      el('button', { class: 'btn block', type: 'submit', text: 'Enviar link' }),
-      el('button', {
-        class: 'link',
-        type: 'button',
-        onclick: () => handlers.irPara('professor', 'entrar'),
-        text: 'Voltar'
-      })
-    );
-    setTimeout(() => em.focus(), 30);
-    return f;
+    const form = html.elemento`
+      <form class="form-grid" onsubmit=${enviar}>
+        <p class="muted" style="margin: 0">Informe o e-mail da sua conta de professor. Vamos enviar um link para você criar uma nova senha.</p>
+        <div class="field">
+          <label for="pr-em">E-mail</label>
+          <input id="pr-em" type="email" autocomplete="email" data-campo="email">
+        </div>
+        ${erro}
+        ${ok}
+        <button class="btn block" type="submit">Enviar link</button>
+        <button class="link" type="button" onclick=${() => handlers.irPara('professor', 'entrar')}>Voltar</button>
+      </form>`;
+    registrarCampos(form);
+
+    function enviar(evento) {
+      evento.preventDefault();
+      executar(form, () => handlers.recuperarSenha(campos.email.value))
+        .then(mensagem => (ok.textContent = mensagem))
+        .catch(ignorar);
+    }
+
+    setTimeout(() => campos.email.focus(), 30);
+    return form;
   }
 
-  const telas = {
-    aluno: { entrar: ['Entrar', entrarAluno], cadastro: ['Primeiro acesso', cadastroAluno] },
+  /* =================================================================
+     Montagem da página: apresentação à esquerda, abas e formulário à direita
+     ================================================================= */
+  const TELAS = {
+    aluno: {
+      entrar: ['Entrar', entrarAluno],
+      cadastro: ['Primeiro acesso', cadastroAluno]
+    },
     professor: {
       entrar: ['Painel do professor', entrarProfessor],
       cadastro: ['Cadastro de professor', cadastroProfessor],
       recuperar: ['Recuperar senha', recuperar]
     }
   };
-  const [titulo, montar] = (telas[aba] || telas.aluno)[modo] || telas[aba].entrar;
+  const [titulo, montarFormulario] = (TELAS[aba] || TELAS.aluno)[modo] || TELAS[aba].entrar;
+  const aba$ = (id, texto) =>
+    html` <button
+      role="tab"
+      aria-selected="${aba === id ? 'true' : 'false'}"
+      onclick=${() => handlers.irPara(id, 'entrar')}
+    >
+      ${texto}
+    </button>`;
 
   raiz.replaceChildren(
-    el(
-      'main',
-      { class: 'login' },
-      el(
-        'section',
-        { class: 'login-hero' },
-        el('h1', {}, 'Software Quest', el('span', { text: 'Missão Entrega Contínua' })),
-        el('p', {
-          class: 'lead',
-          text: 'Entre na DevNova e conduza um projeto de software de verdade, do primeiro pedido da cliente até o sistema no ar.'
-        }),
-        el(
-          'ul',
-          {},
-          el('li', { text: 'Estude cada etapa na trilha de aprendizagem.' }),
-          el('li', { text: 'Ande pelo escritório e cumpra as missões.' }),
-          el('li', { text: 'Ganhe XP, itens e suba no ranking da turma.' })
-        ),
-        el(
-          'p',
-          { class: 'muted', style: { marginTop: '1.2rem', fontSize: '.95rem' } },
-          'Professor: crie sua conta, crie uma turma e passe o código para os alunos. É gratuito. ',
-          el('button', {
-            class: 'link inline',
-            type: 'button',
-            onclick: handlers.privacidade,
-            text: 'Política de privacidade'
-          })
-        )
-      ),
-      el(
-        'section',
-        { class: 'card' },
-        el(
-          'div',
-          { class: 'tabs', role: 'tablist' },
-          el('button', {
-            role: 'tab',
-            'aria-selected': aba === 'aluno' ? 'true' : 'false',
-            onclick: () => handlers.irPara('aluno', 'entrar'),
-            text: 'Sou aluno'
-          }),
-          el('button', {
-            role: 'tab',
-            'aria-selected': aba === 'professor' ? 'true' : 'false',
-            onclick: () => handlers.irPara('professor', 'entrar'),
-            text: 'Sou professor'
-          })
-        ),
-        el('h2', { style: { fontSize: '1.4rem', marginBottom: '1rem' }, text: titulo }),
-        montar()
-      )
-    )
+    html` <main class="login">
+      <section class="login-hero">
+        <h1>Software Quest<span>Missão Entrega Contínua</span></h1>
+        <p class="lead">
+          Entre na DevNova e conduza um projeto de software de verdade, do primeiro pedido da cliente até o sistema no
+          ar.
+        </p>
+        <ul>
+          <li>Estude cada etapa na trilha de aprendizagem.</li>
+          <li>Ande pelo escritório e cumpra as missões.</li>
+          <li>Ganhe XP, itens e suba no ranking da turma.</li>
+        </ul>
+        <p class="muted" style="margin-top: 1.2rem; font-size: .95rem">
+          Professor: crie sua conta, crie uma turma e passe o código para os alunos. É gratuito.
+          <button class="link inline" type="button" onclick=${handlers.privacidade}>Política de privacidade</button>
+        </p>
+      </section>
+      <section class="card">
+        <div class="tabs" role="tablist">${aba$('aluno', 'Sou aluno')} ${aba$('professor', 'Sou professor')}</div>
+        <h2 style="font-size: 1.4rem; margin-bottom: 1rem">${titulo}</h2>
+        ${montarFormulario()}
+      </section>
+    </main>`
   );
 };

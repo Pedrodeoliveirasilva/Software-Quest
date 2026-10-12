@@ -58,6 +58,12 @@ function mostrarEnderecos() {
   }
   console.log('');
   console.log('  Dados salvos em: ' + banco.descricao);
+  if (cfg.ENDERECO_PUBLICO && !cfg.DATABASE_URL) {
+    console.log('');
+    console.log('  ATENÇÃO: o servidor está publicado sem banco de dados (falta a variável DATABASE_URL).');
+    console.log('  Neste modo, contas e progresso são APAGADOS sempre que o serviço reinicia ou dorme.');
+    console.log('  No Render, abra Environment, adicione DATABASE_URL com a connection string do Neon e salve.');
+  }
   console.log('  Para encerrar, aperte Ctrl+C.');
   console.log('');
 }

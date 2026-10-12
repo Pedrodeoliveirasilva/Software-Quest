@@ -42,7 +42,8 @@ js/
 ├── main.js                   ponto de partida
 ├── core/                     utilitários sem regra de negócio
 │   ├── util.js               códigos de turma, validações, CSV, filtro de palavras, personagens
-│   ├── dom.js                criar elementos, avatar (foto ou inicial), avisos, janelas
+│   ├── html.js               templates HTML seguros usados por todas as telas (SQ.html)
+│   ├── dom.js                avatar (foto ou inicial), avisos e janelas sobrepostas
 │   └── imagem.js             recorta e reduz fotos para 160 x 160 antes de enviar
 ├── models/
 │   ├── dados/                CONTEÚDO EDITÁVEL
@@ -79,6 +80,54 @@ js/
         ├── ColecoesController.js  diário, mochila e ranking
         └── PerfilController.js    foto, cor e especialidade
 ```
+
+### Como as telas são escritas
+
+Cada tela é escrita como **HTML dentro do JavaScript**, com o utilitário `SQ.html` (arquivo `js/core/html.js`). Assim, quem abre o arquivo enxerga a estrutura da tela como ela aparece, sem precisar montar a página de cabeça.
+
+```js
+SQ.views.Conta = function (container, { prof }, handlers) {
+  const html = SQ.html;
+
+  /* ---------- Montagem ---------- */
+  const tela = html` <form class="form-grid" onsubmit=${enviar}>
+    <div class="field">
+      <label for="conta-nome">Nome</label>
+      <input id="conta-nome" value="${prof.nome}" data-ref="nome" />
+    </div>
+    <p class="error-msg" role="alert" data-ref="erro"></p>
+    <button class="btn" type="submit">Salvar</button>
+  </form>`;
+  const refs = html.refs(tela);
+  container.replaceChildren(tela);
+
+  /* ---------- Eventos ---------- */
+  async function enviar(evento) {
+    evento.preventDefault();
+    try {
+      await handlers.salvar({ nome: refs.nome.value });
+    } catch (x) {
+      refs.erro.textContent = x.message;
+    }
+  }
+};
+```
+
+O que cada parte faz:
+
+| No template                               | O que acontece                                                                                                   |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `${texto}`                                | o texto é **escapado**: um apelido como `<b>Ana</b>` aparece literalmente, nunca vira HTML                       |
+| `onclick=${funcao}`                       | a função vira o tratamento do clique; vale para qualquer evento (`onchange`, `oninput`, `onsubmit`, `onkeydown`) |
+| `${elemento}` ou `${lista}`               | um componente (como `SQ.dom.avatar(...)`) ou uma lista de templates é inserido no lugar                          |
+| `${condicao ? html`...` : null}`          | parte opcional: `null`, `undefined` e `false` não aparecem                                                       |
+| `${html.atributos({ disabled: true })}`   | atributos opcionais (`true` vira atributo sem valor; `false` e `null` somem)                                     |
+| `data-ref="nome"` + `html.refs(tela)`     | dá acesso ao elemento depois (`refs.nome`) para ler valores ou atualizar a tela                                  |
+| `data-campo="nome"` (só na tela de login) | o campo recebe o foco quando o erro de validação é dele                                                          |
+
+Todas as telas seguem a mesma ordem dentro do arquivo: **Montagem** (o HTML), **Eventos** (o que acontece em cada clique) e, quando a tela muda durante o uso, **Atualização** (funções que redesenham uma parte). Telas grandes, como o painel do professor, são divididas em funções menores com nomes que descrevem cada parte (`cartaoTurma`, `tabelaAlunos`, `graficos`), cada uma com seu próprio template.
+
+**Espaços e quebras de linha.** Entre duas tags, a quebra de linha e a indentação do template são ignoradas, então dá para indentar o HTML à vontade. Com texto de um dos lados, a quebra vira um espaço, como no HTML comum. Isso permite que o Prettier formate os templates sem mudar o que aparece na tela.
 
 ### O contexto compartilhado do aluno (`ctx`)
 
@@ -166,7 +215,7 @@ A correção já é feita pelo `MissaoModel`, e o painel do professor passa a mo
 
 ### Criar uma tela nova no jogo do aluno
 
-1. **View:** crie `js/views/MinhaTelaView.js` com uma função que recebe `(container, dados, handlers)` e só desenha.
+1. **View:** crie `js/views/MinhaTelaView.js` com uma função que recebe `(container, dados, handlers)` e desenha a tela com `SQ.html`, seguindo a ordem Montagem, Eventos e Atualização. Use outra view parecida como modelo.
 2. **Controller:** crie `js/controllers/aluno/MinhaTelaController.js` no formato `SQ.controllers.aluno.MinhaTela = function (ctx) { ... return { abrir } }`.
 3. Em `AlunoController.js`, registre-o em `ctx` e, se quiser um botão, acrescente-o ao menu em `AlunoView.js` e ao `onMenu`.
 4. Inclua os dois arquivos no `index.html`, respeitando a ordem: views antes dos controllers, e os controllers da pasta `aluno/` antes do `AlunoController.js`.
@@ -224,6 +273,7 @@ Para acrescentar um teste, copie um bloco `it(...)` parecido no arquivo do assun
 - **Nomes em português**, iguais aos usados na interface (missão, trilha, turma, perfil).
 - **Namespaces globais:** `SQ.models`, `SQ.views`, `SQ.controllers`, `SQ.dados`, `SQ.util`, `SQ.dom`. Os arquivos são scripts comuns, carregados em ordem pelo `index.html`, sem etapa de compilação.
 - **Cabeçalho em todo arquivo**, dizendo em que camada ele está e o que faz.
+- **Telas com `SQ.html`**, nunca montando HTML com concatenação de textos (`'<p>' + nome + '</p>'`), que deixaria a página vulnerável a códigos digitados pelos usuários.
 - **Antes de enviar ao GitHub**, rode `npm run check`.
 - **Erros mostrados ao usuário** são sempre frases completas em português. Nas views de formulário, o controller lança `Error` com `campo`, e a view foca esse campo.
 - **Conteúdo separado do código:** tudo em `js/models/dados/` pode ser editado por professores sem conhecimento do resto do sistema.

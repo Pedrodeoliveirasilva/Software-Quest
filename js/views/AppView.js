@@ -6,23 +6,21 @@ SQ.views = SQ.views || {};
 
 SQ.views.App = {
   carregando(raiz) {
-    raiz.replaceChildren(SQ.dom.el('p', { class: 'empty', text: 'Carregando…' }));
+    raiz.replaceChildren(SQ.html`<p class="empty">Carregando…</p>`);
   },
+
+  /** Tela de erro com título, mensagem, detalhe opcional e um botão opcional ({ texto, fn }). */
   erro(raiz, { titulo, mensagem, detalhe, acao }) {
-    const el = SQ.dom.el;
+    const html = SQ.html;
     raiz.replaceChildren(
-      el(
-        'main',
-        { class: 'wrap' },
-        el(
-          'div',
-          { class: 'card' },
-          el('h2', { text: titulo, style: { marginBottom: '.6rem' } }),
-          el('p', { text: mensagem }),
-          detalhe ? el('p', { class: 'muted', text: detalhe }) : null,
-          acao ? el('button', { class: 'btn', onclick: acao.fn, text: acao.texto }) : null
-        )
-      )
+      html` <main class="wrap">
+        <div class="card">
+          <h2 style="margin-bottom: .6rem">${titulo}</h2>
+          <p>${mensagem}</p>
+          ${detalhe ? html`<p class="muted">${detalhe}</p>` : null}
+          ${acao ? html`<button class="btn" onclick=${acao.fn}>${acao.texto}</button>` : null}
+        </div>
+      </main>`
     );
   }
 };
