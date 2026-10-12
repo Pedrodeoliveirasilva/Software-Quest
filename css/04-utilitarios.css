@@ -1,0 +1,18 @@
+/* =================================================================
+   UTILITÁRIOS
+   Classes de propósito único. Ficam por último para sempre valerem.
+   ================================================================= */
+
+.hidden {
+  display: none !important;
+}
+
+/* Visível apenas para leitores de tela */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

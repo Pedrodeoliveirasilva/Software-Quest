@@ -1,0 +1,286 @@
+/* =================================================================
+   TELA: missão
+   Topo do desafio, os quatro tipos de desafio (escolha, classificar,
+   selecionar e ordenar) e o resumo ao final da missão.
+   ================================================================= */
+
+.challenge-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.25rem 0 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Progresso dentro da missão */
+.dots {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.dots span {
+  width: 26px;
+  height: 6px;
+  border-radius: var(--raio-pilula);
+  background: var(--line-soft);
+}
+
+.dots span.done {
+  background: var(--line);
+}
+
+.dots span.now {
+  background: color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+/* ---------- Classificar ---------- */
+.classify {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.c-item {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--raio-lg);
+  padding: 0.8rem 1rem;
+}
+
+.c-item.wrong {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
+.c-item.right {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.c-item .text {
+  font-weight: 700;
+  margin-bottom: 0.55rem;
+}
+
+.c-item .why {
+  margin: 0.55rem 0 0;
+  font-size: 0.95rem;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip {
+  border: 2px solid var(--border);
+  background: var(--bg);
+  border-radius: var(--raio-pilula);
+  padding: 0.38rem 0.85rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  min-height: 40px;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--line);
+  background: var(--line);
+  color: var(--on-line);
+  font-weight: 700;
+}
+
+.chip[disabled] {
+  cursor: default;
+}
+
+/* ---------- Selecionar (Sprint) ---------- */
+.capacity {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.9rem;
+  font-weight: 700;
+  flex-wrap: wrap;
+}
+
+.cap-bar {
+  flex: 1;
+  min-width: 160px;
+  height: 12px;
+  border-radius: var(--raio-pilula);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.cap-bar span {
+  display: block;
+  height: 100%;
+  background: var(--line);
+}
+
+.cap-bar.over span {
+  background: var(--bad);
+}
+
+.backlog {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pbi {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.8rem;
+  align-items: center;
+  text-align: left;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--raio-lg);
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  min-height: 54px;
+}
+
+.pbi[aria-pressed="true"] {
+  border-color: var(--line);
+  background: var(--line-soft);
+}
+
+.pbi .prio {
+  font: 700 0.85rem var(--font-display);
+  color: var(--ink-soft);
+  width: 2.2em;
+}
+
+.pbi .pts {
+  font: 800 1rem var(--font-display);
+  background: var(--surface-2);
+  border-radius: var(--raio-sm);
+  padding: 0.15rem 0.55rem;
+}
+
+.pbi[disabled] {
+  cursor: default;
+}
+
+/* ---------- Ordenar ---------- */
+.order-zone {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.order-col h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-body);
+}
+
+.order-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  min-height: 60px;
+}
+
+.order-list.target {
+  counter-reset: step;
+}
+
+.o-item {
+  width: 100%;
+  text-align: left;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--raio-base);
+  padding: 0.6rem 0.9rem;
+  cursor: pointer;
+  min-height: 46px;
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.target .o-item::before {
+  counter-increment: step;
+  content: counter(step);
+  font: 800 0.95rem var(--font-display);
+  color: var(--line);
+  min-width: 1.2em;
+}
+
+.target .o-item.right {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.target .o-item.wrong {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
+.empty-slot {
+  border: 2px dashed var(--border);
+  border-radius: var(--raio-base);
+  padding: 0.6rem 0.9rem;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.points-pop {
+  font: 800 1.05rem var(--font-display);
+  color: var(--ok);
+}
+
+/* ---------- Resumo da missão ---------- */
+.summary {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.big-stars {
+  font-size: clamp(2.6rem, 9vw, 3.6rem);
+  letter-spacing: 0.12em;
+  color: var(--star);
+  line-height: 1;
+}
+
+.big-stars .off {
+  color: var(--surface-2);
+}
+
+.summary h2 {
+  font-size: clamp(1.7rem, 5vw, 2.3rem);
+  margin: 0.7rem 0 0.4rem;
+}
+
+.reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 1rem auto;
+  padding: 0.6rem 1.2rem 0.6rem 0.6rem;
+  border-radius: var(--raio-pilula);
+  background: var(--surface);
+  border: 2px solid var(--line);
+  font-weight: 700;
+}
+
+.reward .icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--raio-circulo);
+  background: var(--line-soft);
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+}
+
+@media (max-width: 720px) {
+  .order-zone {
+    grid-template-columns: 1fr;
+  }
+}

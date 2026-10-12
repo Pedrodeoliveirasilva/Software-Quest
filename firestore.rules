@@ -1,0 +1,101 @@
+rules_version = '2';
+// Regras de segurança do Software Quest (várias escolas, professores e turmas)
+// - Qualquer pessoa pode criar uma conta de professor; cada professor só vê as próprias turmas.
+// - O aluno entra numa turma pelo código de acesso e só lê e grava o próprio perfil.
+// - O ranking é visível apenas para os colegas da mesma turma e para o professor dela.
+// - Fotos de alunos só são aceitas em turmas em que o professor liberou fotos; o professor pode removê-las.
+// - Os eventos de pesquisa só podem ser criados pelo próprio aluno e lidos pelo professor da turma.
+// - O índice "codigos" pode ser lido documento a documento (para o cadastro), mas não listado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function logado() { return request.auth != null; }
+    function eu() { return request.auth.uid; }
+    function caminho(colecao, id) { return /databases/$(database)/documents/$(colecao)/$(id); }
+    function eProfessor() { return logado() && exists(caminho('professores', eu())); }
+    function meuPerfil() { return get(caminho('users', eu())).data; }
+    function meuPerfilDepois() { return getAfter(caminho('users', eu())).data; }
+    function fotoDe(dados) { return dados.get('avatar', {}).get('foto', null); }
+    // Foto: data URL de imagem, com no máximo ~200 KB (o navegador já reduz para ~15 KB)
+    function fotoValida(f) { return f == null || (f is string && f.size() < 204800 && f.matches('^data:image/(jpeg|png|webp);base64,.*')); }
+    function fotosNaTurma(codigoTurma) { return get(caminho('codigos', codigoTurma)).data.get('fotos', false) == true; }
+    // O professor da turma pode apenas remover a foto (sem mudar mais nada)
+    function professorRemovendoFoto() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avatar'])
+        && request.resource.data.avatar.diff(resource.data.avatar).affectedKeys().hasOnly(['foto'])
+        && fotoDe(request.resource.data) == null;
+    }
+
+    match /professores/{id} {
+      allow read: if logado() && eu() == id;
+      allow create: if logado() && eu() == id && !exists(caminho('users', id))
+        && request.resource.data.nome is string && request.resource.data.nome.size() <= 80;
+      allow update: if logado() && eu() == id && request.resource.data.nome is string
+        && fotoValida(request.resource.data.get('foto', null));
+      allow delete: if false;
+    }
+
+    match /turmas/{turmaId} {
+      allow read: if logado() && resource.data.professorUid == eu();
+      allow create: if eProfessor() && request.resource.data.professorUid == eu()
+        && request.resource.data.nome is string && request.resource.data.nome.size() <= 60;
+      allow update: if logado() && resource.data.professorUid == eu()
+        && request.resource.data.professorUid == eu()
+        && request.resource.data.codigo == resource.data.codigo;
+      allow delete: if false;
+    }
+
+    match /codigos/{codigo} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if eProfessor() && request.resource.data.professorUid == eu()
+        && getAfter(caminho('turmas', request.resource.data.turmaId)).data.professorUid == eu()
+        && getAfter(caminho('turmas', request.resource.data.turmaId)).data.codigo == codigo;
+      allow update: if logado() && resource.data.professorUid == eu()
+        && request.resource.data.professorUid == eu()
+        && request.resource.data.turmaId == resource.data.turmaId;
+      allow delete: if false;
+    }
+
+    match /users/{id} {
+      allow read: if logado() && (eu() == id || resource.data.professorUid == eu());
+      allow create: if logado() && eu() == id
+        && request.resource.data.uid == id
+        && request.resource.data.papel == 'aluno'
+        && !exists(caminho('professores', id))
+        && get(caminho('codigos', request.resource.data.codigoTurma)).data.ativa == true
+        && get(caminho('codigos', request.resource.data.codigoTurma)).data.turmaId == request.resource.data.turmaId
+        && get(caminho('codigos', request.resource.data.codigoTurma)).data.professorUid == request.resource.data.professorUid
+        && fotoValida(fotoDe(request.resource.data))
+        && (fotoDe(request.resource.data) == null || fotosNaTurma(request.resource.data.codigoTurma));
+      allow update: if logado() && resource.data.professorUid == eu() && professorRemovendoFoto();
+      allow update: if logado() && eu() == id
+        && fotoValida(fotoDe(request.resource.data))
+        && (fotoDe(request.resource.data) == fotoDe(resource.data) || fotoDe(request.resource.data) == null
+            || fotosNaTurma(resource.data.codigoTurma))
+        && request.resource.data.uid == id
+        && request.resource.data.papel == 'aluno'
+        && request.resource.data.turmaId == resource.data.turmaId
+        && request.resource.data.professorUid == resource.data.professorUid
+        && request.resource.data.codigoTurma == resource.data.codigoTurma;
+      allow delete: if false;
+    }
+
+    match /ranking/{id} {
+      allow read: if logado() && (resource.data.professorUid == eu() || resource.data.turmaId == meuPerfil().turmaId);
+      allow update: if logado() && resource.data.professorUid == eu() && professorRemovendoFoto();
+      allow create, update: if logado() && eu() == id
+        && fotoDe(request.resource.data) == fotoDe(meuPerfilDepois())
+        && request.resource.data.turmaId == meuPerfilDepois().turmaId
+        && request.resource.data.professorUid == meuPerfilDepois().professorUid;
+      allow delete: if false;
+    }
+
+    match /eventos/{id} {
+      allow create: if logado() && request.resource.data.uid == eu()
+        && request.resource.data.turmaId == meuPerfil().turmaId
+        && request.resource.data.professorUid == meuPerfil().professorUid;
+      allow read: if logado() && resource.data.professorUid == eu();
+      allow update, delete: if false;
+    }
+  }
+}

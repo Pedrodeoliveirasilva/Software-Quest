@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Software Quest: Missão Entrega Contínua — jogo educacional sobre processos de desenvolvimento de software."
+    />
+    <meta name="theme-color" content="#6B3FD6" />
+    <title>Software Quest: Missão Entrega Contínua</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Estilos, na ordem das camadas: tokens > base > layout > componentes > telas > utilitários -->
+    <link rel="stylesheet" href="css/01-tokens.css" />
+    <link rel="stylesheet" href="css/02-base.css" />
+    <link rel="stylesheet" href="css/03-layout.css" />
+    <link rel="stylesheet" href="css/componentes/botoes.css" />
+    <link rel="stylesheet" href="css/componentes/formularios.css" />
+    <link rel="stylesheet" href="css/componentes/cartao.css" />
+    <link rel="stylesheet" href="css/componentes/avatar.css" />
+    <link rel="stylesheet" href="css/componentes/barra-superior.css" />
+    <link rel="stylesheet" href="css/componentes/mapa.css" />
+    <link rel="stylesheet" href="css/componentes/dialogo.css" />
+    <link rel="stylesheet" href="css/componentes/janela.css" />
+    <link rel="stylesheet" href="css/componentes/aviso.css" />
+    <link rel="stylesheet" href="css/componentes/tabela.css" />
+    <link rel="stylesheet" href="css/componentes/questoes.css" />
+    <link rel="stylesheet" href="css/componentes/indicadores.css" />
+    <link rel="stylesheet" href="css/telas/login.css" />
+    <link rel="stylesheet" href="css/telas/missao.css" />
+    <link rel="stylesheet" href="css/telas/trilha.css" />
+    <link rel="stylesheet" href="css/telas/colecoes.css" />
+    <link rel="stylesheet" href="css/telas/painel.css" />
+    <link rel="stylesheet" href="css/04-utilitarios.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>Ative o JavaScript para jogar o Software Quest.</noscript>
+
+    <!-- A ordem dos scripts importa: configuração > core > models > views > controllers > main -->
+    <script src="js/config.js"></script>
+
+    <!-- Core: utilitários sem regra de negócio -->
+    <script src="js/core/util.js"></script>
+    <script src="js/core/dom.js"></script>
+    <script src="js/core/imagem.js"></script>
+
+    <!-- Models: conteúdo, regras de negócio e acesso aos dados -->
+    <script src="js/models/dados/trilha.js"></script>
+    <script src="js/models/dados/missoes.js"></script>
+    <script src="js/models/dados/mapa.js"></script>
+    <script src="js/models/PerfilModel.js"></script>
+    <script src="js/models/MissaoModel.js"></script>
+    <script src="js/models/MundoModel.js"></script>
+    <script src="js/models/PainelModel.js"></script>
+    <script src="js/models/Repositorio.js"></script>
+
+    <!-- Views: só interface -->
+    <script src="js/views/Componentes.js"></script>
+    <script src="js/views/AppView.js"></script>
+    <script src="js/views/LoginView.js"></script>
+    <script src="js/views/AlunoView.js"></script>
+    <script src="js/views/MundoView.js"></script>
+    <script src="js/views/MissaoView.js"></script>
+    <script src="js/views/TrilhaView.js"></script>
+    <script src="js/views/ColecoesView.js"></script>
+    <script src="js/views/PainelView.js"></script>
+    <script src="js/views/PerfilView.js"></script>
+    <script src="js/views/ContaView.js"></script>
+    <script src="js/views/PrivacidadeView.js"></script>
+
+    <!-- Controllers: ligam views e models -->
+    <script src="js/controllers/AppController.js"></script>
+    <script src="js/controllers/AuthController.js"></script>
+    <script src="js/controllers/aluno/MundoController.js"></script>
+    <script src="js/controllers/aluno/MissaoController.js"></script>
+    <script src="js/controllers/aluno/TrilhaController.js"></script>
+    <script src="js/controllers/aluno/ColecoesController.js"></script>
+    <script src="js/controllers/aluno/PerfilController.js"></script>
+    <script src="js/controllers/aluno/AlunoController.js"></script>
+    <script src="js/controllers/ProfessorController.js"></script>
+
+    <script src="js/main.js"></script>
+  </body>
+</html>

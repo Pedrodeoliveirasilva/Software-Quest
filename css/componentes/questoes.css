@@ -1,0 +1,138 @@
+/* =================================================================
+   COMPONENTE: questões e feedback
+   Alternativas, contexto, trechos de código e caixas de feedback.
+   Usado nos desafios das missões e nas verificações das lições.
+   ================================================================= */
+
+.prompt {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0.25rem 0 1rem;
+  max-width: 36em;
+}
+
+.context {
+  background: var(--surface-2);
+  border-radius: var(--raio-base);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.context p:last-child {
+  margin: 0;
+}
+
+pre.code {
+  font-family: var(--font-code);
+  font-size: 0.92rem;
+  background: var(--surface-2);
+  border-radius: var(--raio-base);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.log-line.ok {
+  color: var(--ok);
+}
+
+.log-line.bad {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+/* Alternativas */
+.options {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.option {
+  text-align: left;
+  padding: 0.85rem 1.05rem;
+  border-radius: var(--raio-lg);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  min-height: 54px;
+}
+
+.option:hover:not([disabled]) {
+  border-color: var(--line);
+}
+
+.option .key {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--raio-sm);
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.option code {
+  font-family: var(--font-code);
+  font-size: 0.95em;
+}
+
+.option.wrong {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+  cursor: default;
+}
+
+.option.right {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.option[disabled] {
+  cursor: default;
+}
+
+/* Feedback: acerto (.ok), erro (.bad) ou resposta revelada (.reveal) */
+.feedback {
+  margin-top: 1rem;
+  border-radius: var(--raio-lg);
+  padding: 0.95rem 1.1rem;
+  border: 2px solid;
+}
+
+.feedback.ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.feedback.bad {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
+.feedback.reveal {
+  border-color: var(--line);
+  background: var(--line-soft);
+}
+
+.feedback h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.feedback p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .prompt {
+    font-size: 1.1rem;
+  }
+}

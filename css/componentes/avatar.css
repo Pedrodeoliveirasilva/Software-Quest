@@ -1,0 +1,105 @@
+/* =================================================================
+   COMPONENTE: avatar e personagem
+   .dot-avatar      círculo com a foto ou a inicial (SQ.dom.avatar)
+   .avatar-pick     escolha da cor do personagem
+   .class-pick      escolha da especialidade
+   .foto-seletor    prévia da foto com botões (componentes.seletorFoto)
+   ================================================================= */
+
+.dot-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--raio-circulo);
+  display: grid;
+  place-items: center;
+  font: 800 0.9rem var(--font-display);
+  color: var(--branco);
+  flex: 0 0 auto;
+}
+
+.dot-avatar.com-foto {
+  background: var(--surface-2) !important;
+  overflow: hidden;
+  padding: 0;
+}
+
+.dot-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--raio-circulo);
+}
+
+.dot-avatar.avatar-medio {
+  width: 48px;
+  height: 48px;
+  font-size: 1.2rem;
+}
+
+.dot-avatar.avatar-grande {
+  width: 96px;
+  height: 96px;
+  font-size: 2.4rem;
+}
+
+/* Cores */
+.avatar-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.avatar-pick button {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--raio-circulo);
+  border: 3px solid transparent;
+  cursor: pointer;
+}
+
+.avatar-pick button[aria-pressed="true"] {
+  border-color: var(--ink);
+}
+
+/* Especialidades */
+.class-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.class-pick button {
+  border: 2px solid var(--border);
+  background: var(--bg);
+  border-radius: var(--raio-base);
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.class-pick button strong {
+  display: block;
+  font-size: 0.98rem;
+}
+
+.class-pick button[aria-pressed="true"] {
+  border-color: var(--line);
+  background: var(--line-soft);
+}
+
+/* Seletor de foto */
+.foto-seletor {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.foto-acoes {
+  display: grid;
+  gap: 0.35rem;
+  flex: 1;
+  min-width: 200px;
+}

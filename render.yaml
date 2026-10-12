@@ -1,0 +1,16 @@
+# Configuração do Render (https://render.com) para publicar o Software Quest de graça.
+# No painel do Render: New > Blueprint > escolha este repositório.
+# O Render vai pedir o valor de DATABASE_URL: cole a "connection string" do banco gratuito do Neon.
+services:
+  - type: web
+    name: software-quest
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: node servidor.js
+    healthCheckPath: /api/saude
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: NODE_VERSION
+        value: '22'

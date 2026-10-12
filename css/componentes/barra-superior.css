@@ -1,0 +1,151 @@
+/* =================================================================
+   COMPONENTE: barra superior do aluno (HUD)
+   Apelido e nível, barra de XP, medidor de qualidade e menu.
+   ================================================================= */
+
+.hud {
+  position: sticky;
+  top: env(safe-area-inset-top, 0);
+  z-index: var(--camada-barra);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.hud-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.55rem 1.25rem;
+  display: flex;
+  gap: 1.1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hud .who {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-right: auto;
+}
+
+.hud .who .nick {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.hud .who .lvl {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.hud .stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+}
+
+.hud .stat strong {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+/* Barra de XP */
+.xpbar {
+  width: 170px;
+}
+
+.xpbar .bar {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: var(--raio-pilula);
+  overflow: hidden;
+}
+
+.xpbar .bar span {
+  display: block;
+  height: 100%;
+  background: var(--line);
+  transition: width var(--transicao-media);
+}
+
+.xpbar small {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+/* Medidor de qualidade: verde, amarelo (.warn) ou vermelho (.low) */
+.meter {
+  width: 70px;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: var(--raio-pilula);
+  overflow: hidden;
+  align-self: center;
+}
+
+.meter > span {
+  display: block;
+  height: 100%;
+  background: var(--ok);
+}
+
+.meter.warn > span {
+  background: var(--star);
+}
+
+.meter.low > span {
+  background: var(--bad);
+}
+
+/* Menu */
+.nav {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.nav button {
+  border: 2px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--raio-pilula);
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.92rem;
+  min-height: 38px;
+}
+
+.nav button[aria-current="page"] {
+  border-color: var(--line);
+  background: var(--line);
+  color: var(--on-line);
+}
+
+@media (max-width: 720px) {
+  .hud-inner {
+    gap: 0.6rem 0.9rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .hud {
+    position: static;
+  }
+
+  .hud .who {
+    width: 100%;
+  }
+
+  .nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 2px;
+  }
+
+  .nav button {
+    flex: 0 0 auto;
+  }
+}

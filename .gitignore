@@ -1,0 +1,9 @@
+.firebase/
+*.log
+.DS_Store
+node_modules/
+coverage/
+# dados dos alunos e senhas protegidas: nunca envie para o GitHub
+dados/
+*.backup.json
+backup*.json

@@ -1,0 +1,110 @@
+/* =================================================================
+   LAYOUT
+   Estrutura das páginas: largura máxima, grades das telas principais
+   e linhas de botões. Não define aparência de componentes.
+   ================================================================= */
+
+/* Container central de todas as telas */
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 3rem;
+}
+
+/* Login: apresentação à esquerda, formulário à direita */
+.login {
+  min-height: calc(100vh - 40px);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 2rem;
+  align-items: center;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem;
+}
+
+/* Tela do aluno: mapa + painel lateral */
+.world {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.side {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Painel do professor */
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+}
+
+/* Grade de formulários */
+.form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+/* Linha de botões abaixo de um conteúdo */
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.2rem;
+  align-items: center;
+}
+
+/* Linha de filtros (turma no painel) */
+.rank-filter {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .world {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpis {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .login {
+    grid-template-columns: 1fr;
+    padding-top: 1rem;
+  }
+
+  .wrap {
+    padding: 1rem 1rem 2.5rem;
+  }
+}

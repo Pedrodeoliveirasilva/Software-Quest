@@ -1,0 +1,14 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "selector-class-pattern": [
+      "^[a-z][a-z0-9]*(-[a-z0-9]+)*$",
+      {
+        "message": "Use nomes de classe em minúsculas, separados por hífen (ex.: barra-superior)"
+      }
+    ],
+    "no-descending-specificity": null,
+    "declaration-no-important": null,
+    "media-feature-range-notation": "prefix"
+  }
+}
