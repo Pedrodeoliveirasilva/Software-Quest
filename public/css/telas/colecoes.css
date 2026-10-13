@@ -1,0 +1,115 @@
+/* =================================================================
+   TELA: coleções do aluno
+   Mochila (itens), diário de missões e ranking da turma.
+   ================================================================= */
+
+/* ---------- Mochila ---------- */
+.inv {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.7rem;
+}
+
+.inv-item {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--raio-xl);
+  padding: 0.9rem;
+  text-align: center;
+}
+
+.inv-item .icon {
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.inv-item strong {
+  display: block;
+  font-size: 0.95rem;
+  margin-top: 0.3rem;
+}
+
+.inv-item.off {
+  opacity: 0.45;
+  border-style: dashed;
+}
+
+/* ---------- Diário de missões ---------- */
+.quests {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.quest {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  gap: 0.8rem;
+  align-items: center;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--raio-lg);
+  padding: 0.7rem 0.9rem;
+}
+
+.quest .n {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--raio-circulo);
+  display: grid;
+  place-items: center;
+  font: 800 0.95rem var(--font-display);
+  background: var(--surface-2);
+}
+
+.quest.done .n {
+  background: var(--line);
+  color: var(--on-line);
+}
+
+.quest.current {
+  border-color: var(--line);
+}
+
+.quest .stars {
+  color: var(--star);
+  letter-spacing: 0.08em;
+}
+
+/* ---------- Ranking ---------- */
+.rank {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.rank li {
+  display: grid;
+  grid-template-columns: 40px 38px 1fr auto;
+  gap: 0.7rem;
+  align-items: center;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--raio-lg);
+  padding: 0.55rem 0.9rem;
+}
+
+.rank li.me {
+  border-color: var(--line);
+  background: var(--line-soft);
+}
+
+.rank .pos {
+  font: 800 1.1rem var(--font-display);
+  text-align: center;
+}
+
+.rank .xp {
+  font: 800 1.05rem var(--font-display);
+}
+
+.rank .sub {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}

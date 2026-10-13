@@ -8,6 +8,8 @@ const PASTA_DADOS = process.env.DADOS_DIR ? path.resolve(process.env.DADOS_DIR) 
 
 module.exports = {
   RAIZ,
+  // Pasta do site (HTML, CSS e JavaScript do navegador): só o que está aqui é entregue aos visitantes
+  PUBLICO: path.join(RAIZ, 'public'),
   PASTA_DADOS,
   ARQUIVO_DADOS: path.join(PASTA_DADOS, 'banco.json'),
   PORTA: Number(process.env.PORT) || 3000,

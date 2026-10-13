@@ -32,7 +32,7 @@ Ao iniciar, o servidor mostra também os endereços para os alunos, por exemplo 
   node servidor.js redefinir-senha professor@email.com nova-senha
   ```
 
-- **Live Server não funciona:** abrir o `index.html` direto ou pelo Live Server não funciona, porque é o servidor que guarda as contas e o progresso. Nesse caso, o jogo mostra uma tela explicando como iniciar o servidor.
+- **Live Server não funciona:** abrir o `public/index.html` direto ou pelo Live Server não funciona, porque é o servidor que guarda as contas e o progresso. Nesse caso, o jogo mostra uma tela explicando como iniciar o servidor.
 
 ## O que o sistema tem
 
@@ -41,7 +41,7 @@ Ao iniciar, o servidor mostra também os endereços para os alunos, por exemplo 
 | Contas de professor    | O professor se cadastra pelo próprio site, com nome, escola, e-mail e senha, e pode recuperar a senha por e-mail.                                                                                                                                                                                                        |
 | Turmas                 | Cada professor cria quantas turmas quiser. Cada turma recebe um código de acesso de 6 caracteres (por exemplo, `QX7-42B`), que pode ser aberto ou fechado para novos cadastros.                                                                                                                                          |
 | Cadastro do aluno      | O aluno informa o código da turma, cria um nome de usuário, um apelido e uma senha. Não é pedido nome completo nem e-mail. Em turmas marcadas como participantes de pesquisa, ele informa também o código de participante (P01 a P99) dos formulários de pré e pós-teste.                                                |
-| Moderação              | Apelidos e nomes de usuário com palavras ofensivas são recusados no cadastro (lista editável em `js/core/util.js`).                                                                                                                                                                                                      |
+| Moderação              | Apelidos e nomes de usuário com palavras ofensivas são recusados no cadastro (lista editável em `public/js/core/util.js`).                                                                                                                                                                                               |
 | Privacidade            | Política de privacidade e termos de uso, aceitos no cadastro de alunos e professores.                                                                                                                                                                                                                                    |
 | Mundo RPG              | Escritório da DevNova com corredor e 7 salas. O aluno anda com o teclado, o mouse ou o toque, conversa com os personagens e inicia as missões. Cada porta abre quando a missão anterior é concluída.                                                                                                                     |
 | Missões                | 7 missões, uma por etapa do processo (requisitos, planejamento, programação, testes, integração contínua, entrega contínua e manutenção), com 23 desafios de quatro tipos: escolha, classificação, montagem da Sprint e ordenação.                                                                                       |
@@ -57,13 +57,14 @@ Ao iniciar, o servidor mostra também os endereços para os alunos, por exemplo 
 O site segue o padrão **MVC** (Model-View-Controller) e o servidor é dividido em módulos pequenos, um por responsabilidade. A explicação completa, com o mapa de todos os arquivos, os fluxos entre as camadas e guias passo a passo (adicionar lição, desafio, tela ou rota), está em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 
 ```
-index.html                  página única
-css/                        estilos em camadas: tokens, base, layout, componentes/, telas/, utilitários
-js/
-├── core/                   utilitários sem regra de negócio (DOM, imagem, validações)
-├── models/                 regras do jogo, acesso aos dados e conteúdo editável (models/dados/)
-├── views/                  telas (só desenham e repassam cliques)
-└── controllers/            coordenam views e models; aluno/ tem um controller por área
+public/                     o site (tudo o que o navegador recebe)
+├── index.html              página única
+├── css/                    estilos em camadas: tokens, base, layout, componentes/, telas/, utilitários
+└── js/
+    ├── core/               utilitários sem regra de negócio (templates, imagem, validações)
+    ├── models/             regras do jogo, acesso aos dados e conteúdo editável (models/dados/)
+    ├── views/              telas (só desenham e repassam cliques)
+    └── controllers/        coordenam views e models; aluno/ tem um controller por área
 servidor.js                 ponto de partida do servidor
 servidor/                   módulos do servidor: armazenamento, segurança, HTTP e rotas/
 test/                       testes automatizados (npm test)
@@ -73,23 +74,25 @@ render.yaml, package.json   publicação gratuita no Render
 firestore.rules, firebase.json   alternativa com Firebase
 ```
 
+O servidor só entrega aos visitantes o que está dentro de `public/`. O código do servidor, os testes e a pasta `dados/` ficam de fora por causa da própria estrutura.
+
 ### Onde editar o quê
 
-| Quero mudar...                         | Arquivo                                                                             |
-| -------------------------------------- | ----------------------------------------------------------------------------------- |
-| Lições da trilha                       | `js/models/dados/trilha.js`                                                         |
-| Missões, desafios, falas e itens       | `js/models/dados/missoes.js`                                                        |
-| Mapa do escritório                     | `js/models/dados/mapa.js`                                                           |
-| Pontuação, níveis e XP                 | `js/config.js`                                                                      |
-| Regras de recomendação de estudo       | `js/models/PerfilModel.js` (função `recomendacao`)                                  |
-| Palavras bloqueadas em apelidos        | `js/core/util.js` (`termosBloqueados`)                                              |
-| Pontuação usada no ranking do servidor | `servidor/config.js` (`NIVEIS`)                                                     |
-| Texto da política de privacidade       | `js/views/PrivacidadeView.js`                                                       |
-| Tamanho máximo das fotos               | `js/core/imagem.js` (tamanho da imagem) e `servidor/config.js` (`TAMANHO_MAX_FOTO`) |
-| Regras de acesso do servidor           | `servidor/seguranca.js` e os arquivos de `servidor/rotas/`                          |
-| Visual                                 | `css/style.css`                                                                     |
+| Quero mudar...                         | Arquivo                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Lições da trilha                       | `public/js/models/dados/trilha.js`                                                         |
+| Missões, desafios, falas e itens       | `public/js/models/dados/missoes.js`                                                        |
+| Mapa do escritório                     | `public/js/models/dados/mapa.js`                                                           |
+| Pontuação, níveis e XP                 | `public/js/config.js`                                                                      |
+| Regras de recomendação de estudo       | `public/js/models/PerfilModel.js` (função `recomendacao`)                                  |
+| Palavras bloqueadas em apelidos        | `public/js/core/util.js` (`termosBloqueados`)                                              |
+| Pontuação usada no ranking do servidor | `servidor/config.js` (`NIVEIS`)                                                            |
+| Texto da política de privacidade       | `public/js/views/PrivacidadeView.js`                                                       |
+| Tamanho máximo das fotos               | `public/js/core/imagem.js` (tamanho da imagem) e `servidor/config.js` (`TAMANHO_MAX_FOTO`) |
+| Regras de acesso do servidor           | `servidor/seguranca.js` e os arquivos de `servidor/rotas/`                                 |
+| Visual                                 | `public/css/style.css`                                                                     |
 
-Os arquivos são scripts comuns (sem `import`/`export`), carregados em ordem pelo `index.html`, respeitando as dependências: core, models, views, controllers e, por último, `mgit ain.js`. Assim o projeto não precisa de nenhuma etapa de compilação.
+Os arquivos do site são scripts comuns (sem `import`/`export`), carregados em ordem pelo `public/index.html`, respeitando as dependências: core, models, views, controllers e, por último, `main.js`. Assim o projeto não precisa de nenhuma etapa de compilação.
 
 ## Desenvolvimento
 
@@ -172,7 +175,7 @@ $env:DATABASE_URL="cole-a-connection-string"; node servidor.js exportar backup.j
 
 ## Alternativa: colocar na internet com o Firebase
 
-Em vez do Render + Neon, você pode usar o Firebase. Ele não dorme, mas exige mais passos de configuração e não permite que o professor redefina a senha dos alunos no plano gratuito. Quando o campo `firebase` de `js/config.js` está preenchido, o sistema passa a usar o Firebase no lugar do servidor local, sem nenhuma outra mudança no código.
+Em vez do Render + Neon, você pode usar o Firebase. Ele não dorme, mas exige mais passos de configuração e não permite que o professor redefina a senha dos alunos no plano gratuito. Quando o campo `firebase` de `public/js/config.js` está preenchido, o sistema passa a usar o Firebase no lugar do servidor local, sem nenhuma outra mudança no código.
 
 O plano gratuito do Firebase (Spark) atende uma turma do tamanho desta pesquisa. Consulte os limites atuais em https://firebase.google.com/pricing.
 
@@ -199,8 +202,8 @@ Os alunos não usam e-mail. O sistema monta internamente um endereço a partir d
 
 1. Em **Configurações do projeto** (ícone de engrenagem), na seção "Seus apps", clique no ícone `</>` para registrar um app da Web.
 2. Copie o objeto `firebaseConfig` que aparece.
-3. Em `js/config.js`, troque `firebase: null` pelo conteúdo desse objeto. Há um exemplo comentado no próprio arquivo: cole só o que está entre as chaves, sem `const firebaseConfig =`.
-4. Ainda em `js/config.js`, preencha o bloco `privacidade` com o nome do responsável pela plataforma, o e-mail de contato e a data. Esses dados aparecem na política de privacidade.
+3. Em `public/js/config.js`, troque `firebase: null` pelo conteúdo desse objeto. Há um exemplo comentado no próprio arquivo: cole só o que está entre as chaves, sem `const firebaseConfig =`.
+4. Ainda em `public/js/config.js`, preencha o bloco `privacidade` com o nome do responsável pela plataforma, o e-mail de contato e a data. Esses dados aparecem na política de privacidade.
 
 ### 5. Testar no seu computador
 
@@ -249,7 +252,7 @@ No painel do professor há dois arquivos para exportar:
 
 Em turmas de pesquisa, a coluna `codigo_pesquisa` permite cruzar os dados do jogo com os formulários de pré e pós-teste. As estatísticas do painel consideram apenas a primeira vez que cada aluno fez cada desafio; as repetições ficam marcadas com `repeticao = 1` no CSV.
 
-O sistema não coleta nome completo, e-mail nem outros dados pessoais dos alunos, o que ajuda no cumprimento da LGPD. Antes de abrir a plataforma ao público, revise a política de privacidade (em `js/views/PrivacidadeView.js`) com apoio jurídico ou da sua instituição.
+O sistema não coleta nome completo, e-mail nem outros dados pessoais dos alunos, o que ajuda no cumprimento da LGPD. Antes de abrir a plataforma ao público, revise a política de privacidade (em `public/js/views/PrivacidadeView.js`) com apoio jurídico ou da sua instituição.
 
 ## Limitações conhecidas
 

@@ -1,0 +1,46 @@
+/* =================================================================
+   COMPONENTE: tabelas (painel do professor)
+   A tabela rola na horizontal dentro de .table-wrap em telas pequenas.
+   ================================================================= */
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--raio-base);
+  margin-top: 0.6rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92rem;
+  background: var(--surface);
+}
+
+th,
+td {
+  padding: 0.5rem 0.7rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  background: var(--surface-2);
+  font-weight: 700;
+}
+
+th button {
+  background: none;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+
+td .dot-avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}

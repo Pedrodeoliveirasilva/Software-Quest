@@ -1,0 +1,150 @@
+/* =================================================================
+   TELA: trilha de aprendizagem
+   Lista de módulos e lições e a página de leitura da lição.
+   ================================================================= */
+
+.trilha {
+  display: grid;
+  gap: 1rem;
+}
+
+.modulo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--raio-xl);
+  padding: 1rem 1.1rem;
+}
+
+.modulo-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+.modulo-head h3 {
+  font-size: 1.15rem;
+}
+
+.licoes {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.licao-btn {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 0.7rem;
+  align-items: center;
+  text-align: left;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  border-radius: var(--raio-base);
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+  min-height: 50px;
+}
+
+.licao-btn:hover:not([disabled]) {
+  border-color: var(--line);
+}
+
+.licao-btn .mark {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--raio-circulo);
+  border: 2px solid var(--border);
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.licao-btn.done .mark {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--branco);
+}
+
+.licao-btn .tag {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.licao-btn[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.progress-line {
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: var(--raio-pilula);
+  overflow: hidden;
+  margin-top: 0.7rem;
+}
+
+.progress-line span {
+  display: block;
+  height: 100%;
+  background: var(--ok);
+}
+
+/* ---------- Leitura da lição ---------- */
+.lesson {
+  max-width: 40em;
+}
+
+.lesson h3 {
+  font-size: 1.2rem;
+  margin: 1.2rem 0 0.4rem;
+}
+
+.lesson .exemplo {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 5px solid var(--line);
+  border-radius: var(--raio-md);
+  padding: 0.8rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.lesson .exemplo strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.lesson .dica {
+  background: var(--ok-soft);
+  border-radius: var(--raio-md);
+  padding: 0.8rem 1rem;
+  margin: 0 0 1rem;
+}
+
+.lesson ul {
+  margin: 0 0 1rem;
+  padding-left: 1.2rem;
+}
+
+.lesson li {
+  margin-bottom: 0.3rem;
+}
+
+.lesson pre.code {
+  margin-bottom: 1rem;
+}
+
+/* Verificação ao final da lição */
+.check {
+  margin-top: 1.4rem;
+  background: var(--surface);
+  border: 2px solid var(--line-soft);
+  border-radius: var(--raio-xl);
+  padding: 1rem 1.1rem;
+}
+
+.check h3 {
+  margin-top: 0;
+}

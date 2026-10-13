@@ -1,0 +1,41 @@
+/* =================================================================
+   COMPONENTE: caixa de diálogo com personagens (abaixo do mapa)
+   ================================================================= */
+
+.dialog-box {
+  position: relative;
+  margin-top: 0.6rem;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: var(--raio-xl);
+  padding: 1rem 1.1rem;
+  box-shadow: var(--shadow);
+  z-index: var(--camada-dialogo);
+}
+
+.dialog-box .speaker {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.dialog-box .speaker strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.dialog-box .speaker span {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.dialog-box p {
+  margin: 0 0 0.7rem;
+}
+
+.dialog-box .choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}

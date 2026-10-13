@@ -15,8 +15,8 @@ module.exports = [
     }
   },
   {
-    // Site: scripts comuns carregados pelo index.html, que compartilham o objeto global SQ
-    files: ['js/**/*.js'],
+    // Site: scripts comuns carregados pelo public/index.html, que compartilham o objeto global SQ
+    files: ['public/js/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',

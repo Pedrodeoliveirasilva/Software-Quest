@@ -63,7 +63,7 @@ async function atenderApi(req, res, url) {
   }
 }
 
-/* ---------- arquivos do site: somente index.html, css/ e js/ ---------- */
+/* ---------- arquivos do site: somente o que está na pasta public/ ---------- */
 const TIPOS = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
@@ -74,13 +74,13 @@ const TIPOS = {
 };
 function servirArquivo(res, caminho) {
   if (caminho === '/') caminho = '/index.html';
-  const permitido = caminho === '/index.html' || caminho.startsWith('/css/') || caminho.startsWith('/js/');
-  const arquivo = path.normalize(path.join(cfg.RAIZ, caminho));
+  const arquivo = path.normalize(path.join(cfg.PUBLICO, caminho));
   const naoEncontrado = () => {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Não encontrado');
   };
-  if (!permitido || !arquivo.startsWith(cfg.RAIZ + path.sep)) return naoEncontrado();
+  // Nada fora de public/ é entregue (protege o servidor, os testes e a pasta dados/)
+  if (!arquivo.startsWith(cfg.PUBLICO + path.sep)) return naoEncontrado();
   fs.readFile(arquivo, (err, conteudo) => {
     if (err) return naoEncontrado();
     res.writeHead(200, {

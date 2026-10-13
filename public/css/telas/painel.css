@@ -1,0 +1,126 @@
+/* =================================================================
+   TELA: painel do professor
+   Cabeçalho, cartão da turma com o código, indicadores e gráficos de
+   barras. A tabela de alunos usa o componente de tabela.
+   ================================================================= */
+
+.panel-head h1 {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+}
+
+.panel-who {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* ---------- Cartão da turma ---------- */
+.turma-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.codigo-box {
+  display: grid;
+  justify-items: end;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.codigo {
+  font: 800 2rem var(--font-display);
+  letter-spacing: 0.14em;
+  color: var(--line);
+  line-height: 1;
+}
+
+/* ---------- Indicadores ---------- */
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--raio-xl);
+  padding: 0.9rem 1rem;
+}
+
+.kpi strong {
+  display: block;
+  font: 800 1.8rem var(--font-display);
+}
+
+.kpi span {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.panel-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--raio-xl);
+  padding: 1.1rem;
+}
+
+.panel-section h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.panel-section > p {
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- Gráfico de barras: roxo, amarelo (.mid) ou vermelho (.low) ---------- */
+.bars {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 9.5em 1fr 3.5em;
+  gap: 0.6rem;
+  align-items: center;
+  font-size: 0.92rem;
+}
+
+.bar-row .track {
+  height: 14px;
+  background: var(--surface-2);
+  border-radius: var(--raio-pilula);
+  overflow: hidden;
+}
+
+.bar-row .track span {
+  display: block;
+  height: 100%;
+  background: var(--line);
+  border-radius: var(--raio-pilula);
+}
+
+.bar-row .track span.low {
+  background: var(--bad);
+}
+
+.bar-row .track span.mid {
+  background: var(--star);
+}
+
+.bar-row .val {
+  text-align: right;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .codigo-box {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .bar-row {
+    grid-template-columns: 7em 1fr 3em;
+  }
+}

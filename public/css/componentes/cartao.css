@@ -1,0 +1,37 @@
+/* =================================================================
+   COMPONENTE: cartões
+   .card            caixa branca com borda e sombra
+   .objective/.reco cartões do painel lateral do aluno (faixa colorida)
+   .empty           mensagem de lista vazia
+   ================================================================= */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--raio-2xl);
+  padding: 1.4rem;
+  box-shadow: var(--shadow);
+}
+
+.side .card {
+  padding: 1.1rem;
+}
+
+.side h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+}
+
+.objective {
+  border-left: 5px solid var(--line);
+}
+
+.reco {
+  border-left: 5px solid var(--star);
+}
+
+.empty {
+  padding: 1.2rem;
+  text-align: center;
+  color: var(--ink-soft);
+}

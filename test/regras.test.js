@@ -5,15 +5,15 @@ const assert = require('node:assert/strict');
 const { carregarSite } = require('./ajudantes');
 
 const SQ = carregarSite([
-  'js/config.js',
-  'js/core/util.js',
-  'js/models/dados/trilha.js',
-  'js/models/dados/missoes.js',
-  'js/models/dados/mapa.js',
-  'js/models/PerfilModel.js',
-  'js/models/MissaoModel.js',
-  'js/models/MundoModel.js',
-  'js/models/PainelModel.js'
+  'public/js/config.js',
+  'public/js/core/util.js',
+  'public/js/models/dados/trilha.js',
+  'public/js/models/dados/missoes.js',
+  'public/js/models/dados/mapa.js',
+  'public/js/models/PerfilModel.js',
+  'public/js/models/MissaoModel.js',
+  'public/js/models/MundoModel.js',
+  'public/js/models/PainelModel.js'
 ]);
 const { Perfil, Missao, Mundo, Painel } = SQ.models;
 const D = SQ.dados;

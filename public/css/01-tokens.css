@@ -1,0 +1,108 @@
+/* =================================================================
+   TOKENS DE DESIGN
+   Todas as decisões visuais do sistema (cores, tipografia, cantos,
+   sombras, camadas e animações) ficam aqui, em variáveis CSS.
+   Para mudar a cara do jogo, altere estes valores em vez de mexer
+   nos componentes.
+
+   Pontos de quebra (media queries não aceitam variáveis):
+     900px  tablet: o painel lateral desce para baixo do mapa
+     720px  celular: uma coluna, controles de toque e mapa rolável
+   ================================================================= */
+
+:root {
+  /* ---------- Cores (tema claro) ---------- */
+  --bg: #f6f7fb;
+  --surface: #fff;
+  --surface-2: #eef0f7;
+  --ink: #16182b;
+  --ink-soft: #505574;
+  --line: #6b3fd6;
+  --line-soft: #e6defa;
+  --on-line: #fff;
+  --ok: #0c8f7c;
+  --ok-soft: #ddf4ef;
+  --bad: #c93a3a;
+  --bad-soft: #fbe4e4;
+  --star: #e0a500;
+  --border: #d9dce8;
+  --focus: #2d6bff;
+  --branco: #fff;
+
+  /* ---------- Tipografia ---------- */
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "Cascadia Mono", consolas, monospace;
+
+  /* ---------- Cantos arredondados ---------- */
+  --raio-xs: 6px;
+  --raio-sm: 8px;
+  --raio-md: 10px;
+  --raio-base: 12px;
+  --raio-lg: 14px;
+  --raio-xl: 16px;
+  --raio-2xl: 18px;
+  --raio-3xl: 22px;
+  --raio-pilula: 999px;
+  --raio-circulo: 50%;
+
+  /* ---------- Sombras ---------- */
+  --shadow: 0 1px 0 rgb(22 24 43 / 6%), 0 8px 24px -12px rgb(22 24 43 / 18%);
+
+  /* ---------- Camadas (z-index) ---------- */
+  --camada-dialogo: 5;
+  --camada-barra: 20;
+  --camada-janela: 50;
+  --camada-aviso: 90;
+
+  /* ---------- Animações ---------- */
+  --transicao-rapida: 0.12s ease;
+  --transicao-media: 0.4s ease;
+
+  color-scheme: light;
+}
+
+/* ---------- Tema escuro: automático pelo sistema ou forçado com data-theme="dark" ---------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111325;
+    --surface: #1b1e37;
+    --surface-2: #242848;
+    --ink: #eceefa;
+    --ink-soft: #a7abcb;
+    --line: #9d7fff;
+    --line-soft: #2e2758;
+    --on-line: #140f2e;
+    --ok: #3cc9b2;
+    --ok-soft: #12352f;
+    --bad: #ff7a7a;
+    --bad-soft: #3e1d24;
+    --star: #ffc940;
+    --border: #33385e;
+    --focus: #7fa6ff;
+    --shadow: 0 8px 24px -12px rgb(0 0 0 / 60%);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #111325;
+  --surface: #1b1e37;
+  --surface-2: #242848;
+  --ink: #eceefa;
+  --ink-soft: #a7abcb;
+  --line: #9d7fff;
+  --line-soft: #2e2758;
+  --on-line: #140f2e;
+  --ok: #3cc9b2;
+  --ok-soft: #12352f;
+  --bad: #ff7a7a;
+  --bad-soft: #3e1d24;
+  --star: #ffc940;
+  --border: #33385e;
+  --focus: #7fa6ff;
+  --shadow: 0 8px 24px -12px rgb(0 0 0 / 60%);
+
+  color-scheme: dark;
+}

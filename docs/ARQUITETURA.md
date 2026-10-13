@@ -6,7 +6,7 @@ Este documento explica como o código está organizado e mostra, passo a passo, 
 
 O sistema tem duas partes:
 
-- **O site (pasta `js/`)**, que roda no navegador, organizado no padrão MVC.
+- **O site (pasta `public/`)**, que roda no navegador: a página `index.html`, os estilos em `css/` e o JavaScript em `js/`, organizado no padrão MVC.
 - **O servidor (`servidor.js` e pasta `servidor/`)**, que guarda contas e dados. Em vez dele, também é possível usar o Firebase.
 
 ```
@@ -26,18 +26,20 @@ O sistema tem duas partes:
 
 ## As três camadas do site
 
-| Camada         | Pasta             | O que faz                                                                                                         | O que **não** faz                      |
-| -------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| **Model**      | `js/models/`      | Guarda o conteúdo, aplica as regras do jogo (XP, níveis, correção dos desafios, recomendações) e acessa os dados. | Não mexe na tela.                      |
-| **View**       | `js/views/`       | Desenha a tela e avisa o controller quando o usuário clica, digita ou toca.                                       | Não decide nada e não acessa os dados. |
-| **Controller** | `js/controllers/` | Recebe as ações das views, consulta e atualiza os models e manda as views se atualizarem.                         | Não desenha elementos diretamente.     |
+| Camada         | Pasta                    | O que faz                                                                                                         | O que **não** faz                      |
+| -------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Model**      | `public/js/models/`      | Guarda o conteúdo, aplica as regras do jogo (XP, níveis, correção dos desafios, recomendações) e acessa os dados. | Não mexe na tela.                      |
+| **View**       | `public/js/views/`       | Desenha a tela e avisa o controller quando o usuário clica, digita ou toca.                                       | Não decide nada e não acessa os dados. |
+| **Controller** | `public/js/controllers/` | Recebe as ações das views, consulta e atualiza os models e manda as views se atualizarem.                         | Não desenha elementos diretamente.     |
 
 Regra prática: se a dúvida é **"o que acontece?"**, o lugar é um model; **"como aparece?"**, uma view; **"quando e em que ordem?"**, um controller.
 
 ### Mapa dos arquivos do site
 
+Tudo o que roda no navegador fica em `public/`. O JavaScript está em `public/js/`:
+
 ```
-js/
+public/js/
 ├── config.js                 configuração (Firebase opcional, pontuação, níveis, privacidade)
 ├── main.js                   ponto de partida
 ├── core/                     utilitários sem regra de negócio
@@ -83,7 +85,7 @@ js/
 
 ### Como as telas são escritas
 
-Cada tela é escrita como **HTML dentro do JavaScript**, com o utilitário `SQ.html` (arquivo `js/core/html.js`). Assim, quem abre o arquivo enxerga a estrutura da tela como ela aparece, sem precisar montar a página de cabeça.
+Cada tela é escrita como **HTML dentro do JavaScript**, com o utilitário `SQ.html` (arquivo `public/js/core/html.js`). Assim, quem abre o arquivo enxerga a estrutura da tela como ela aparece, sem precisar montar a página de cabeça.
 
 ```js
 SQ.views.Conta = function (container, { prof }, handlers) {
@@ -154,7 +156,7 @@ servidor/
 ├── armazenamento.js         arquivo JSON ou PostgreSQL, com a mesma interface
 ├── banco.js                 dados em memória e gravação agrupada
 ├── seguranca.js             senhas (scrypt), sessões, limites e regras de acesso
-├── http.js                  roteador da API, leitura do corpo, arquivos do site
+├── http.js                  roteador da API, leitura do corpo, entrega dos arquivos de public/
 ├── comandos.js              terminal: redefinir-senha, exportar, importar
 └── rotas/
     ├── sessao.js            /api/saude, /api/sessao, /api/sair
@@ -192,11 +194,11 @@ Cada arquivo de rota exporta uma função que recebe `rota(metodo, caminho, func
 
 ### Adicionar uma lição à trilha
 
-Edite `js/models/dados/trilha.js`. No módulo desejado, acrescente um objeto à lista `licoes`, com `id` único, `titulo`, `minutos`, `blocos` e `verificacao`. Os tipos de bloco são `p`, `lista`, `exemplo`, `dica` e `codigo`. Para que ela só apareça depois da missão, use `aprofundamento: true`. Nenhum outro arquivo precisa mudar.
+Edite `public/js/models/dados/trilha.js`. No módulo desejado, acrescente um objeto à lista `licoes`, com `id` único, `titulo`, `minutos`, `blocos` e `verificacao`. Os tipos de bloco são `p`, `lista`, `exemplo`, `dica` e `codigo`. Para que ela só apareça depois da missão, use `aprofundamento: true`. Nenhum outro arquivo precisa mudar.
 
 ### Adicionar um desafio a uma missão
 
-Edite `js/models/dados/missoes.js`. Na lista `desafios` da missão, acrescente um objeto com `id` único e um destes tipos:
+Edite `public/js/models/dados/missoes.js`. Na lista `desafios` da missão, acrescente um objeto com `id` único e um destes tipos:
 
 | Tipo          | Campos principais                                                                                         |
 | ------------- | --------------------------------------------------------------------------------------------------------- |
@@ -215,27 +217,27 @@ A correção já é feita pelo `MissaoModel`, e o painel do professor passa a mo
 
 ### Criar uma tela nova no jogo do aluno
 
-1. **View:** crie `js/views/MinhaTelaView.js` com uma função que recebe `(container, dados, handlers)` e desenha a tela com `SQ.html`, seguindo a ordem Montagem, Eventos e Atualização. Use outra view parecida como modelo.
-2. **Controller:** crie `js/controllers/aluno/MinhaTelaController.js` no formato `SQ.controllers.aluno.MinhaTela = function (ctx) { ... return { abrir } }`.
+1. **View:** crie `public/js/views/MinhaTelaView.js` com uma função que recebe `(container, dados, handlers)` e desenha a tela com `SQ.html`, seguindo a ordem Montagem, Eventos e Atualização. Use outra view parecida como modelo.
+2. **Controller:** crie `public/js/controllers/aluno/MinhaTelaController.js` no formato `SQ.controllers.aluno.MinhaTela = function (ctx) { ... return { abrir } }`.
 3. Em `AlunoController.js`, registre-o em `ctx` e, se quiser um botão, acrescente-o ao menu em `AlunoView.js` e ao `onMenu`.
-4. Inclua os dois arquivos no `index.html`, respeitando a ordem: views antes dos controllers, e os controllers da pasta `aluno/` antes do `AlunoController.js`.
+4. Inclua os dois arquivos no `public/index.html`, respeitando a ordem: views antes dos controllers, e os controllers da pasta `aluno/` antes do `AlunoController.js`.
 
 ### Criar uma rota nova no servidor
 
 1. Escreva a rota no arquivo de `servidor/rotas/` do assunto, usando `seg.exigirAluno(s)` ou `seg.exigirProfessor(s)` para controlar o acesso.
-2. Em `js/models/Repositorio.js`, acrescente o método correspondente ao objeto `Servidor` (e, se usar Firebase, ao objeto `Firebase`, com a regra equivalente em `firestore.rules`).
+2. Em `public/js/models/Repositorio.js`, acrescente o método correspondente ao objeto `Servidor` (e, se usar Firebase, ao objeto `Firebase`, com a regra equivalente em `firestore.rules`).
 3. Chame o método a partir de um controller.
 
 ### Mudar a pontuação ou os níveis
 
-Edite `js/config.js` (`pontosPorTentativa`, `maxTentativas`, `perdaQualidadePorErro`, `xpLicao`, `xpVerificacao`, `niveis`). Se mudar os níveis, atualize também `NIVEIS` em `servidor/config.js`, usado no ranking.
+Edite `public/js/config.js` (`pontosPorTentativa`, `maxTentativas`, `perdaQualidadePorErro`, `xpLicao`, `xpVerificacao`, `niveis`). Se mudar os níveis, atualize também `NIVEIS` em `servidor/config.js`, usado no ranking.
 
-## Os estilos (pasta `css/`)
+## Os estilos (pasta `public/css/`)
 
-O CSS é dividido em camadas, da mais geral para a mais específica, seguindo a metodologia ITCSS. O `index.html` carrega os arquivos nessa ordem, e cada camada pode sobrescrever as anteriores:
+O CSS é dividido em camadas, da mais geral para a mais específica, seguindo a metodologia ITCSS. O `public/index.html` carrega os arquivos nessa ordem, e cada camada pode sobrescrever as anteriores:
 
 ```
-css/
+public/css/
 ├── 01-tokens.css        decisões de design em variáveis: cores (claro e escuro), fontes, cantos, sombras, camadas
 ├── 02-base.css          elementos HTML puros: reset, tipografia, foco do teclado
 ├── 03-layout.css        estrutura das páginas: largura, grades das telas, linhas de botões
@@ -271,9 +273,9 @@ Para acrescentar um teste, copie um bloco `it(...)` parecido no arquivo do assun
 ## Convenções
 
 - **Nomes em português**, iguais aos usados na interface (missão, trilha, turma, perfil).
-- **Namespaces globais:** `SQ.models`, `SQ.views`, `SQ.controllers`, `SQ.dados`, `SQ.util`, `SQ.dom`. Os arquivos são scripts comuns, carregados em ordem pelo `index.html`, sem etapa de compilação.
+- **Namespaces globais:** `SQ.models`, `SQ.views`, `SQ.controllers`, `SQ.dados`, `SQ.util`, `SQ.dom`. Os arquivos são scripts comuns, carregados em ordem pelo `public/index.html`, sem etapa de compilação.
 - **Cabeçalho em todo arquivo**, dizendo em que camada ele está e o que faz.
 - **Telas com `SQ.html`**, nunca montando HTML com concatenação de textos (`'<p>' + nome + '</p>'`), que deixaria a página vulnerável a códigos digitados pelos usuários.
 - **Antes de enviar ao GitHub**, rode `npm run check`.
 - **Erros mostrados ao usuário** são sempre frases completas em português. Nas views de formulário, o controller lança `Error` com `campo`, e a view foca esse campo.
-- **Conteúdo separado do código:** tudo em `js/models/dados/` pode ser editado por professores sem conhecimento do resto do sistema.
+- **Conteúdo separado do código:** tudo em `public/js/models/dados/` pode ser editado por professores sem conhecimento do resto do sistema.

@@ -7,9 +7,9 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { RAIZ } = require('./ajudantes');
 
-// Todos os arquivos CSS e JS que o index.html carrega
-const html = fs.readFileSync(path.join(RAIZ, 'index.html'), 'utf8');
-const arquivosDoSite = [...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)].map(m => m[1]);
+// Todos os arquivos CSS e JS que o public/index.html carrega (caminhos a partir da raiz do projeto)
+const html = fs.readFileSync(path.join(RAIZ, 'public', 'index.html'), 'utf8');
+const arquivosDoSite = [...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+)"/g)].map(m => 'public/' + m[1]);
 
 /** Devolve os arquivos que o Git ignoraria, ou null se o Git não estiver disponível. */
 function ignoradosPeloGit(arquivos) {
@@ -28,8 +28,8 @@ function ignoradosPeloGit(arquivos) {
 }
 
 describe('Estrutura do projeto', () => {
-  it('todos os arquivos carregados pelo index.html existem', () => {
-    assert.ok(arquivosDoSite.length > 30, 'o index.html deveria carregar os arquivos do site');
+  it('todos os arquivos carregados pelo public/index.html existem', () => {
+    assert.ok(arquivosDoSite.length > 30, 'o public/index.html deveria carregar os arquivos do site');
     const faltando = arquivosDoSite.filter(a => !fs.existsSync(path.join(RAIZ, a)));
     assert.deepEqual(faltando, []);
   });

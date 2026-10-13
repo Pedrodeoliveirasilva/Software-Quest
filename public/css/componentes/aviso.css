@@ -1,0 +1,19 @@
+/* =================================================================
+   COMPONENTE: aviso rápido na parte de baixo da tela (SQ.dom.toast)
+   ================================================================= */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--bg);
+  padding: 0.7rem 1.2rem;
+  border-radius: var(--raio-pilula);
+  font-weight: 700;
+  z-index: var(--camada-aviso);
+  box-shadow: var(--shadow);
+  max-width: calc(100% - 2rem);
+  text-align: center;
+}

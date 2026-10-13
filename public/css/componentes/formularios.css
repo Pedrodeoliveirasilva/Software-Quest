@@ -1,0 +1,105 @@
+/* =================================================================
+   COMPONENTE: formulários
+   Campos com rótulo e dica, mensagens de erro e sucesso, caixas de
+   seleção, campo do código da turma e abas (Sou aluno / Sou professor).
+   ================================================================= */
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.field input,
+.field select {
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--raio-base);
+  border: 2px solid var(--border);
+  background: var(--bg);
+  width: 100%;
+  min-height: 46px;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--line);
+  outline: none;
+}
+
+.field .hint {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.error-msg {
+  color: var(--bad);
+  font-weight: 700;
+  min-height: 1.4em;
+  margin: 0;
+}
+
+.ok-msg {
+  color: var(--ok);
+  font-weight: 700;
+  margin: 0;
+}
+
+.ok-msg:empty,
+.error-msg:empty {
+  min-height: 0;
+}
+
+/* Caixa de seleção com texto ao lado */
+.check-line {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.check-line input {
+  width: 20px;
+  height: 20px;
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+  accent-color: var(--line);
+}
+
+/* Campo do código da turma (letras grandes e espaçadas) */
+.input-codigo {
+  font: 800 1.35rem var(--font-display) !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Abas */
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  background: var(--surface-2);
+  padding: 0.3rem;
+  border-radius: var(--raio-pilula);
+  margin-bottom: 1.2rem;
+}
+
+.tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--raio-pilula);
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.tabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}

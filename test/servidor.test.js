@@ -2,7 +2,21 @@
 'use strict';
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const http = require('node:http');
 const { iniciarServidor, FOTO_TESTE } = require('./ajudantes');
+
+/** Faz um GET enviando o caminho exatamente como escrito (sem resolver "..") e devolve o status. */
+function statusSemNormalizar(url, caminho) {
+  const { hostname, port } = new URL(url);
+  return new Promise((resolve, reject) => {
+    http
+      .get({ hostname, port, path: caminho }, res => {
+        res.resume();
+        resolve(res.statusCode);
+      })
+      .on('error', reject);
+  });
+}
 
 /** Cria professor, turma e aluno; devolve tokens e o código da turma. */
 async function prepararTurma(api, sufixo = '', opcoesTurma = {}) {
@@ -162,11 +176,21 @@ describe('Permissões e dados protegidos', () => {
       '/servidor.js',
       '/servidor/seguranca.js',
       '/package.json',
-      '/js/../dados/banco.json'
+      '/test/ajudantes.js'
     ]) {
       assert.equal((await fetch(s.url + caminho)).status, 404, caminho);
     }
+    // Tentativas de sair da pasta public/ enviadas sem normalizar o caminho (o fetch normalizaria)
+    for (const caminho of [
+      '/js/../../servidor.js',
+      '/../dados/banco.json',
+      '/%2e%2e/servidor.js',
+      '/css/..%2f..%2fpackage.json'
+    ]) {
+      assert.equal(await statusSemNormalizar(s.url, caminho), 404, caminho);
+    }
     assert.equal((await fetch(s.url + '/')).status, 200);
+    assert.equal((await fetch(s.url + '/css/01-tokens.css')).status, 200);
   });
 });
 
