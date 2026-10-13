@@ -10,7 +10,7 @@ services:
     startCommand: node servidor.js
     healthCheckPath: /api/saude
     envVars:
-      - key: DATABASE_URL postgresql://neondb_owner:npg_3ZVQJmBMo9bN@ep-square-sky-b60s0753-pooler.c-2.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: DATABASE_URL 'postgresql://neondb_owner:npg_3ZVQJmBMo9bN@ep-square-sky-b60s0753-pooler.c-2.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
         sync: false
       - key: NODE_VERSION
         value: '22'
