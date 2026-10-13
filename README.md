@@ -89,7 +89,7 @@ firestore.rules, firebase.json   alternativa com Firebase
 | Regras de acesso do servidor           | `servidor/seguranca.js` e os arquivos de `servidor/rotas/`                          |
 | Visual                                 | `css/style.css`                                                                     |
 
-Os arquivos são scripts comuns (sem `import`/`export`), carregados em ordem pelo `index.html`, respeitando as dependências: core, models, views, controllers e, por último, `main.js`. Assim o projeto não precisa de nenhuma etapa de compilação.
+Os arquivos são scripts comuns (sem `import`/`export`), carregados em ordem pelo `index.html`, respeitando as dependências: core, models, views, controllers e, por último, `mgit ain.js`. Assim o projeto não precisa de nenhuma etapa de compilação.
 
 ## Desenvolvimento
 
