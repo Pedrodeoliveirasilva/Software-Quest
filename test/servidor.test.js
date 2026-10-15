@@ -55,10 +55,20 @@ describe('Contas e sessões', () => {
     assert.equal((await s.api('POST', 'login/professor', { email: 'hugo@escola.com', senha: 'prof123' })).status, 200);
   });
 
-  it('bloqueia depois de muitas senhas erradas', async () => {
+  it('bloqueia a conta depois de muitas senhas erradas, mesmo trocando o IP informado', async () => {
+    await s.api('POST', 'professores', { nome: 'Alvo Teste', email: 'alvo@escola.com', senha: 'certa1' });
+    const tentar = (senha, ip) =>
+      fetch(s.url + '/api/login/professor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip },
+        body: JSON.stringify({ email: 'alvo@escola.com', senha })
+      }).then(r => r.status);
     let ultimo;
-    for (let i = 0; i < 16; i++) ultimo = await s.api('POST', 'login/professor', { email: 'x@y.com', senha: 'nao' });
-    assert.equal(ultimo.status, 429);
+    for (let i = 0; i < 11; i++) ultimo = await tentar('errada', '10.0.0.' + i);
+    assert.equal(ultimo, 429);
+    assert.equal(await tentar('certa1', '10.0.1.1'), 429, 'a conta fica bloqueada por alguns minutos');
+    // As outras contas continuam funcionando
+    assert.equal((await s.api('POST', 'login/professor', { email: 'hugo@escola.com', senha: 'prof123' })).status, 200);
   });
 
   it('encerra a sessão ao sair', async () => {
@@ -113,6 +123,14 @@ describe('Turmas e alunos', () => {
     assert.equal(r.status, 404);
   });
 
+  it('erros de senha de vários alunos na mesma rede não bloqueiam a turma', async () => {
+    // Na escola, todos saem pelo mesmo IP: 40 alunos errando a senha uma vez não podem travar os demais
+    for (let i = 0; i < 40; i++)
+      await s.api('POST', 'login/aluno', { codigoTurma: t.turma.codigo, usuario: 'aluno' + i, senha: 'errada' });
+    const r = await s.api('POST', 'login/aluno', { codigoTurma: t.turma.codigo, usuario: 'ana', senha: 'senha123' });
+    assert.equal(r.status, 200);
+  });
+
   it('turma fechada não aceita novos cadastros', async () => {
     await s.api('PATCH', 'turmas/' + t.turma.id, { ativa: false }, t.tokenProf);
     const r = await s.api('POST', 'alunos', {
@@ -141,19 +159,35 @@ describe('Permissões e dados protegidos', () => {
 
   it('o aluno não consegue mudar turma, usuário ou professor pelo perfil', async () => {
     const { dados } = await s.api('GET', 'perfil', undefined, t.tokenAluno);
-    const alterado = { ...dados.perfil, turmaId: 'outra', usuario: 'hacker', professorUid: 'invasor', xp: 500 };
+    const alterado = {
+      ...dados.perfil,
+      turmaId: 'outra',
+      usuario: 'hacker',
+      professorUid: 'invasor',
+      missoes: { requisitos: { pontos: 300, acertosPrimeira: 3, total: 3, tempoSegundos: 60, vezes: 1 } }
+    };
     await s.api('PUT', 'perfil', { perfil: alterado }, t.tokenAluno);
     const depois = (await s.api('GET', 'perfil', undefined, t.tokenAluno)).dados.perfil;
     assert.equal(depois.turmaId, t.turma.id);
     assert.equal(depois.usuario, 'ana');
-    assert.equal(depois.xp, 500, 'o progresso é salvo normalmente');
+    assert.equal(depois.xp, 300, 'o progresso é salvo normalmente');
   });
 
   it('os eventos ficam com os dados do aluno logado e só o professor da turma os vê', async () => {
     await s.api(
       'POST',
       'eventos',
-      { evento: { tipo: 'desafio', uid: 'falso', turmaId: 'outra', pontos: 100 } },
+      {
+        evento: {
+          tipo: 'desafio',
+          faseId: 'requisitos',
+          desafioId: 'req-pergunta',
+          tentativas: 1,
+          acertou: true,
+          uid: 'falso',
+          turmaId: 'outra'
+        }
+      },
       t.tokenAluno
     );
     const meus = (await s.api('GET', 'professor/eventos', undefined, t.tokenProf)).dados.eventos;
@@ -191,6 +225,152 @@ describe('Permissões e dados protegidos', () => {
     }
     assert.equal((await fetch(s.url + '/')).status, 200);
     assert.equal((await fetch(s.url + '/css/01-tokens.css')).status, 200);
+  });
+});
+
+describe('Progresso e eventos validados pelo servidor', () => {
+  let s, t;
+  const evento = (e, token = t.tokenAluno) => s.api('POST', 'eventos', { evento: e }, token);
+  const desafio = (desafioId, extra = {}) => ({
+    tipo: 'desafio',
+    faseId: 'requisitos',
+    desafioId,
+    tentativas: 1,
+    acertou: true,
+    tempoSegundos: 20,
+    ...extra
+  });
+  const eventosDoProfessor = async () =>
+    (await s.api('GET', 'professor/eventos', undefined, t.tokenProf)).dados.eventos;
+  const perfil = async () => (await s.api('GET', 'perfil', undefined, t.tokenAluno)).dados.perfil;
+
+  before(async () => {
+    s = await iniciarServidor();
+    t = await prepararTurma(s.api, 'V');
+  });
+  after(() => s.parar());
+
+  it('o cadastro ignora XP, missões e campos estranhos enviados pelo navegador', async () => {
+    const r = await s.api('POST', 'alunos', {
+      codigoTurma: t.turma.codigo,
+      usuario: 'trapaca',
+      senha: 'abcdef',
+      perfil: {
+        apelido: 'Esperto',
+        xp: 99999,
+        missoes: { requisitos: { pontos: 300 }, planejamento: { pontos: 300 } },
+        licoes: { 'req-1': { acertouPrimeira: true } },
+        lixo: 'x'.repeat(2000),
+        avatar: { cor: 'red;background:url(//e.co)', classe: 'hacker' }
+      }
+    });
+    const p = (await s.api('GET', 'perfil', undefined, r.dados.token)).dados.perfil;
+    assert.equal(p.xp, 0);
+    assert.deepEqual(p.missoes, {});
+    assert.deepEqual(p.licoes, {});
+    assert.equal(p.lixo, undefined);
+    assert.equal(p.avatar.cor, '#6B3FD6');
+    assert.equal(p.avatar.classe, 'frontend');
+  });
+
+  it('o XP é recalculado a partir das missões e lições, que precisam ser coerentes', async () => {
+    const atual = await perfil();
+    await s.api(
+      'PUT',
+      'perfil',
+      {
+        perfil: {
+          ...atual,
+          xp: 99999,
+          missoes: {
+            requisitos: { pontos: 99999, acertosPrimeira: 2, total: 3 }, // 2 de primeira: no máximo 250
+            testes: { pontos: 300, acertosPrimeira: 3 } // missão fora de ordem: ignorada
+          },
+          licoes: { 'req-1': { acertouPrimeira: true }, 'plan-3': { acertouPrimeira: true }, inventada: {} },
+          campoNovo: 'x'.repeat(5000),
+          avatar: { cor: '#123ABC', classe: 'qa' }
+        }
+      },
+      t.tokenAluno
+    );
+    const p = await perfil();
+    assert.deepEqual(Object.keys(p.missoes), ['requisitos']);
+    assert.equal(p.missoes.requisitos.pontos, 250);
+    assert.equal(p.missoes.requisitos.estrelas, 2);
+    assert.deepEqual(Object.keys(p.licoes), ['req-1'], 'lição inventada e aprofundamento bloqueado ficam de fora');
+    assert.equal(p.xp, 250 + 30);
+    assert.equal(p.campoNovo, undefined);
+    assert.equal(p.avatar.cor, '#123ABC');
+    assert.equal(p.avatar.classe, 'qa');
+  });
+
+  it('a cor do avatar não aceita CSS, nem no perfil nem no ranking', async () => {
+    const atual = await perfil();
+    await s.api(
+      'PUT',
+      'perfil',
+      { perfil: { ...atual, avatar: { cor: 'red;background:url(//e.co)', classe: 'qa' } } },
+      t.tokenAluno
+    );
+    assert.equal((await perfil()).avatar.cor, '#6B3FD6');
+    const ranking = (await s.api('GET', 'ranking', undefined, t.tokenAluno)).dados.ranking;
+    assert.ok(ranking.every(r => /^#[0-9a-fA-F]{6}$/.test(r.avatar.cor)));
+  });
+
+  it('recusa eventos de fase, desafio ou tipo desconhecidos e tentativas incoerentes', async () => {
+    assert.equal((await evento({ tipo: 'desafio', faseId: 'inventada', desafioId: 'x' })).status, 400);
+    assert.equal((await evento(desafio('nao-existe'))).status, 400);
+    assert.equal((await evento({ ...desafio('req-historia'), tipo: 'outro' })).status, 400);
+    assert.equal((await evento(desafio('req-historia', { tentativas: 9 }))).status, 400);
+    assert.equal((await evento(desafio('req-historia', { acertou: false, tentativas: 1 }))).status, 400);
+  });
+
+  it('recalcula pontos e acerto de primeira e descarta campos extras', async () => {
+    const antes = (await eventosDoProfessor()).length;
+    const r = await evento(
+      desafio('req-classificar', { tentativas: 2, acertouPrimeira: true, pontos: 100000, extra: 'x', uid: 'outro' })
+    );
+    assert.equal(r.status, 200);
+    const e = (await eventosDoProfessor())[antes];
+    assert.equal(e.acertouPrimeira, false);
+    assert.equal(e.pontos, 50);
+    assert.equal(e.tipoDesafio, 'classificar');
+    assert.equal(e.fase, 'Requisitos');
+    assert.equal(e.extra, undefined);
+    assert.equal(e.uid, t.uidAluno);
+  });
+
+  it('a repetição é decidida pelo servidor, não pelo navegador', async () => {
+    await evento(desafio('req-historia', { repeticao: false }));
+    await evento(desafio('req-historia', { repeticao: false }));
+    const meus = (await eventosDoProfessor()).filter(e => e.desafioId === 'req-historia');
+    assert.deepEqual(
+      meus.map(e => e.repeticao),
+      [false, true]
+    );
+  });
+
+  it('não aceita eventos de uma missão que ainda não foi liberada', async () => {
+    const outra = await prepararTurma(s.api, 'W');
+    const planejamento = { ...desafio('plan-papeis'), faseId: 'planejamento' };
+    assert.equal((await evento(planejamento, outra.tokenAluno)).status, 400);
+    const fim = { tipo: 'missao', faseId: 'requisitos', pontos: 300, acertosPrimeira: 3, tempoSegundos: 100 };
+    assert.equal((await evento(fim, outra.tokenAluno)).status, 200);
+    assert.equal((await evento(planejamento, outra.tokenAluno)).status, 200);
+  });
+
+  it('limita a quantidade de eventos por minuto de um mesmo aluno', async () => {
+    const outra = await prepararTurma(s.api, 'X');
+    let ultimo;
+    for (let i = 0; i < 61; i++) ultimo = await evento(desafio('req-pergunta'), outra.tokenAluno);
+    assert.equal(ultimo.status, 429);
+  });
+
+  it('recusa corpos grandes demais', async () => {
+    const r = await evento({ ...desafio('req-pergunta'), lixo: 'x'.repeat(20000) });
+    assert.equal(r.status, 413);
+    const enorme = await s.api('PUT', 'perfil', { perfil: { lixo: 'x'.repeat(400 * 1024) } }, t.tokenAluno);
+    assert.equal(enorme.status, 413);
   });
 });
 

@@ -78,7 +78,9 @@ SQ.views.Aluno = function (raiz, { handlers }) {
           ${avatar}
           <div>
             <div class="nick">${perfil.apelido}</div>
-            <div class="lvl">${nivel.nome} · ${U.classes[perfil.avatar.classe].nome} · ${perfil.turma}</div>
+            <div class="lvl">
+              ${nivel.nome} · ${(U.classes[perfil.avatar.classe] || U.classes.frontend).nome} · ${perfil.turma}
+            </div>
           </div>
         </div>
         <div class="xpbar">

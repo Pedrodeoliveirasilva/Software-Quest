@@ -20,14 +20,22 @@ module.exports = {
 
   DOMINIO_ALUNOS: 'alunos.softwarequest.app', // e-mail interno dos alunos (nunca exibido)
   VALIDADE_SESSAO_MS: 30 * 24 * 3600 * 1000, // 30 dias
-  LIMITE_CORPO_BYTES: 1024 * 1024, // 1 MB por requisição
+  // Tamanho máximo do corpo de cada requisição. O padrão é pequeno; só as rotas que recebem
+  // foto aceitam mais. Junto com a validação dos campos, isso impede que alguém encha o banco.
+  LIMITE_CORPO_BYTES: 8 * 1024, // 8 KB (login, turmas, eventos...)
+  // 300 KB nas rotas que podem trazer foto (inclusive o PUT do perfil, que o navegador envia
+  // com o avatar). Nessas rotas o tamanho não enche o banco: só os campos conhecidos são guardados.
+  LIMITE_CORPO_FOTO: 300 * 1024,
   TAMANHO_MAX_FOTO: 200 * 1024, // fotos já chegam reduzidas pelo navegador (~15 KB)
-  ALFABETO_CODIGO: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789',
-  NIVEIS: [
-    ['Estagiário(a)', 0],
-    ['Júnior', 400],
-    ['Pleno', 1000],
-    ['Sênior', 1800],
-    ['Tech Lead', 2600]
-  ]
+  // Eventos de pesquisa por aluno. Uma passagem completa pelo jogo gera ~50; o limite deixa
+  // margem para muitas repetições e impede que um único aluno encha o banco.
+  MAX_EVENTOS_POR_ALUNO: 2000,
+  LIMITES: {
+    janelaLoginMs: 15 * 60 * 1000, // 15 minutos
+    falhasPorConta: 10, // senhas erradas numa mesma conta na janela
+    falhasPorIp: 300, // senhas erradas a partir da mesma rede na janela (a escola inteira divide o IP)
+    cadastrosPorIp: 300, // cadastros por hora a partir da mesma rede
+    eventosPorMinuto: 60 // eventos por aluno por minuto
+  },
+  ALFABETO_CODIGO: 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 };

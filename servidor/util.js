@@ -26,18 +26,24 @@ const texto = (v, max) =>
     .trim()
     .slice(0, max);
 
+/** Resumo público da turma, usado no índice de códigos (cadastro do aluno pelo código de acesso). */
+const resumoCodigo = (id, t) => ({
+  turmaId: id,
+  nome: t.nome,
+  escola: t.escola,
+  professorUid: t.professorUid,
+  professorNome: t.professorNome,
+  pesquisa: !!t.pesquisa,
+  fotos: !!t.fotos,
+  ativa: t.ativa !== false
+});
+
 function gerarCodigoTurma(codigosExistentes) {
   let c;
   do {
     c = Array.from(crypto.randomBytes(6), b => cfg.ALFABETO_CODIGO[b % cfg.ALFABETO_CODIGO.length]).join('');
   } while (codigosExistentes[c]);
   return c;
-}
-
-function nivelDe(xp) {
-  let nome = cfg.NIVEIS[0][0];
-  for (const [n, min] of cfg.NIVEIS) if (xp >= min) nome = n;
-  return nome;
 }
 
 /**
@@ -63,6 +69,6 @@ module.exports = {
   emailAluno,
   texto,
   gerarCodigoTurma,
-  nivelDe,
+  resumoCodigo,
   validarFoto
 };

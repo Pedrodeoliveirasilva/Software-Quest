@@ -1,0 +1,52 @@
+# Integração contínua: a cada envio ao GitHub, confere formatação, código e testes.
+# Os testes rodam duas vezes: com o arquivo JSON (modo local) e com um PostgreSQL de verdade,
+# igual ao do Neon. O resultado aparece na aba "Actions" do repositório e ao lado de cada commit.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: teste
+          POSTGRES_PASSWORD: teste
+          POSTGRES_DB: teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Conferir formatação (Prettier)
+        run: npm run format:check
+
+      - name: Verificar código (ESLint e Stylelint)
+        run: npm run lint
+
+      - name: Rodar testes (arquivo JSON)
+        run: npm test
+
+      - name: Rodar testes (PostgreSQL)
+        run: npm test
+        env:
+          TESTE_DATABASE_URL: postgresql://teste:teste@localhost:5432/teste

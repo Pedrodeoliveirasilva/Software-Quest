@@ -1,14 +1,26 @@
 /* =================================================================
    Onde os dados ficam guardados
-   - Arquivo JSON no computador (padrão, sem configuração).
-   - PostgreSQL online, quando existe a variável DATABASE_URL.
-   As duas opções têm a mesma interface: carregar(), salvar(dados), fechar().
+   - Arquivo JSON no computador (padrão, sem configuração): servidor/armazenamento.js
+   - PostgreSQL com tabelas de verdade (Neon), quando existe a variável DATABASE_URL:
+     servidor/postgres.js
+   As duas opções têm a mesma interface:
+     carregar()              -> todos os dados, ou null se ainda não houver nada
+     salvar(dados, lote)     -> grava as mudanças (lote diz quais registros mudaram)
+     substituir(dados)       -> troca tudo (comando importar)
+     fechar()
    ================================================================= */
 'use strict';
 const fs = require('fs');
 const cfg = require('./config');
 
 function armazenamentoArquivo() {
+  // No arquivo, gravar tudo de uma vez é simples e rápido o bastante: o lote é ignorado
+  function gravar(dados) {
+    fs.mkdirSync(cfg.PASTA_DADOS, { recursive: true });
+    const tmp = cfg.ARQUIVO_DADOS + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(dados));
+    fs.renameSync(tmp, cfg.ARQUIVO_DADOS); // troca atômica: o arquivo nunca fica pela metade
+  }
   return {
     descricao: cfg.ARQUIVO_DADOS,
     async carregar() {
@@ -20,45 +32,18 @@ function armazenamentoArquivo() {
       }
     },
     async salvar(dados) {
-      fs.mkdirSync(cfg.PASTA_DADOS, { recursive: true });
-      const tmp = cfg.ARQUIVO_DADOS + '.tmp';
-      fs.writeFileSync(tmp, JSON.stringify(dados));
-      fs.renameSync(tmp, cfg.ARQUIVO_DADOS); // troca atômica: o arquivo nunca fica pela metade
+      gravar(dados);
+    },
+    async substituir(dados) {
+      gravar(dados);
     },
     async fechar() {}
   };
 }
 
-function armazenamentoPostgres(url) {
-  let Pool;
-  try {
-    ({ Pool } = require('pg'));
-  } catch (e) {
-    console.error('A variável DATABASE_URL foi definida, mas o pacote "pg" não está instalado. Rode: npm install');
-    process.exit(1);
-  }
-  const pool = new Pool({ connectionString: url, max: 3, idleTimeoutMillis: 30000, connectionTimeoutMillis: 20000 });
-  pool.on('error', e => console.error('Conexão com o banco encerrada (será reaberta quando preciso):', e.message));
-  return {
-    descricao: 'banco PostgreSQL (DATABASE_URL)',
-    async carregar() {
-      await pool.query(
-        'CREATE TABLE IF NOT EXISTS softwarequest_dados (id text PRIMARY KEY, dados jsonb NOT NULL, atualizado_em timestamptz NOT NULL DEFAULT now())'
-      );
-      const r = await pool.query("SELECT dados FROM softwarequest_dados WHERE id = 'principal'");
-      return r.rows[0] ? r.rows[0].dados : null;
-    },
-    async salvar(dados) {
-      await pool.query(
-        "INSERT INTO softwarequest_dados (id, dados, atualizado_em) VALUES ('principal', $1::jsonb, now()) " +
-          'ON CONFLICT (id) DO UPDATE SET dados = EXCLUDED.dados, atualizado_em = now()',
-        [JSON.stringify(dados)]
-      );
-    },
-    fechar: () => pool.end()
-  };
-}
-
 module.exports = {
-  criarArmazenamento: () => (cfg.DATABASE_URL ? armazenamentoPostgres(cfg.DATABASE_URL) : armazenamentoArquivo())
+  criarArmazenamento() {
+    if (!cfg.DATABASE_URL) return armazenamentoArquivo();
+    return require('./postgres').armazenamentoPostgres(cfg.DATABASE_URL);
+  }
 };

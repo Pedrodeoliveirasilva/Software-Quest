@@ -5,6 +5,10 @@ rules_version = '2';
 // - O ranking é visível apenas para os colegas da mesma turma e para o professor dela.
 // - Fotos de alunos só são aceitas em turmas em que o professor liberou fotos; o professor pode removê-las.
 // - Os eventos de pesquisa só podem ser criados pelo próprio aluno e lidos pelo professor da turma.
+//   Cada evento só aceita os campos do jogo, com pontos e acerto de primeira coerentes com as tentativas.
+// - O XP do aluno tem um teto (o máximo que o jogo permite) e a cor do avatar precisa ser #RRGGBB.
+//   Os números abaixo seguem public/js/config.js; o teste "regras do Firebase acompanham a pontuação"
+//   (npm test) avisa se eles ficarem diferentes.
 // - O índice "codigos" pode ser lido documento a documento (para o cadastro), mas não listado.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -17,6 +21,37 @@ service cloud.firestore {
     function fotoDe(dados) { return dados.get('avatar', {}).get('foto', null); }
     // Foto: data URL de imagem, com no máximo ~200 KB (o navegador já reduz para ~15 KB)
     function fotoValida(f) { return f == null || (f is string && f.size() < 204800 && f.matches('^data:image/(jpeg|png|webp);base64,.*')); }
+    // Pontuação (igual a public/js/config.js): pontos por tentativa, XP da lição e XP máximo do jogo
+    function pontosPorTentativa() { return [100, 50, 25]; }
+    function xpLicao(acertouPrimeira) { return acertouPrimeira ? 30 : 20; }
+    function xpMaximo() { return 2930; }
+    function corValida(dados) { return dados.get('avatar', {}).get('cor', '#6B3FD6').matches('^#[0-9A-Fa-f]{6}$'); }
+    function xpValido(dados) { return dados.get('xp', 0) is int && dados.get('xp', 0) >= 0 && dados.get('xp', 0) <= xpMaximo(); }
+    function tempoValido(e) { return e.get('tempoSegundos', 0) is int && e.get('tempoSegundos', 0) >= 0; }
+    function eventoValido(e) {
+      return e.keys().hasOnly(['uid', 'usuario', 'codigoPesquisa', 'turmaId', 'turma', 'professorUid', 'tipo',
+          'faseId', 'fase', 'desafioId', 'tipoDesafio', 'licaoId', 'tentativas', 'acertou', 'acertouPrimeira',
+          'pontos', 'estrelas', 'acertosPrimeira', 'tempoSegundos', 'dataHora', 'repeticao'])
+        && e.tipo in ['desafio', 'licao', 'missao']
+        && e.faseId is string && e.faseId.size() <= 40
+        && tempoValido(e)
+        && (e.tipo != 'desafio' || (
+          e.desafioId is string && e.desafioId.size() <= 40
+          && e.tentativas is int && e.tentativas >= 1 && e.tentativas <= 3
+          && e.acertou is bool
+          && (e.acertou || e.tentativas == 3)
+          && e.acertouPrimeira == (e.acertou && e.tentativas == 1)
+          && e.pontos == (e.acertou ? pontosPorTentativa()[e.tentativas - 1] : 0)))
+        && (e.tipo != 'licao' || (
+          e.licaoId is string && e.licaoId.size() <= 40
+          && e.tentativas is int && e.tentativas >= 1
+          && e.acertouPrimeira == (e.tentativas == 1)
+          && e.pontos == xpLicao(e.acertouPrimeira)))
+        && (e.tipo != 'missao' || (
+          e.pontos is int && e.pontos >= 0 && e.pontos <= 500
+          && e.estrelas in [1, 2, 3]
+          && e.acertosPrimeira is int && e.acertosPrimeira >= 0 && e.acertosPrimeira <= 5));
+    }
     function fotosNaTurma(codigoTurma) { return get(caminho('codigos', codigoTurma)).data.get('fotos', false) == true; }
     // O professor da turma pode apenas remover a foto (sem mudar mais nada)
     function professorRemovendoFoto() {
@@ -65,10 +100,14 @@ service cloud.firestore {
         && get(caminho('codigos', request.resource.data.codigoTurma)).data.ativa == true
         && get(caminho('codigos', request.resource.data.codigoTurma)).data.turmaId == request.resource.data.turmaId
         && get(caminho('codigos', request.resource.data.codigoTurma)).data.professorUid == request.resource.data.professorUid
+        && request.resource.data.get('xp', 0) == 0
+        && corValida(request.resource.data)
         && fotoValida(fotoDe(request.resource.data))
         && (fotoDe(request.resource.data) == null || fotosNaTurma(request.resource.data.codigoTurma));
       allow update: if logado() && resource.data.professorUid == eu() && professorRemovendoFoto();
       allow update: if logado() && eu() == id
+        && xpValido(request.resource.data)
+        && corValida(request.resource.data)
         && fotoValida(fotoDe(request.resource.data))
         && (fotoDe(request.resource.data) == fotoDe(resource.data) || fotoDe(request.resource.data) == null
             || fotosNaTurma(resource.data.codigoTurma))
@@ -85,6 +124,8 @@ service cloud.firestore {
       allow update: if logado() && resource.data.professorUid == eu() && professorRemovendoFoto();
       allow create, update: if logado() && eu() == id
         && fotoDe(request.resource.data) == fotoDe(meuPerfilDepois())
+        && request.resource.data.get('xp', 0) == meuPerfilDepois().get('xp', 0)
+        && corValida(request.resource.data)
         && request.resource.data.turmaId == meuPerfilDepois().turmaId
         && request.resource.data.professorUid == meuPerfilDepois().professorUid;
       allow delete: if false;
@@ -93,7 +134,8 @@ service cloud.firestore {
     match /eventos/{id} {
       allow create: if logado() && request.resource.data.uid == eu()
         && request.resource.data.turmaId == meuPerfil().turmaId
-        && request.resource.data.professorUid == meuPerfil().professorUid;
+        && request.resource.data.professorUid == meuPerfil().professorUid
+        && eventoValido(request.resource.data);
       allow read: if logado() && resource.data.professorUid == eu();
       allow update, delete: if false;
     }

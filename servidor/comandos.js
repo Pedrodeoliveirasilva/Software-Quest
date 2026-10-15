@@ -16,6 +16,7 @@ const comandos = {
     if (senha.length < 6) throw new Error('A nova senha precisa ter pelo menos 6 caracteres.');
     Object.assign(conta, seg.protegerSenha(senha));
     seg.encerrarSessoesDe(conta.uid);
+    banco.alterar('contas', email);
     await banco.gravarAgora();
     return 'Senha redefinida para ' + email + '.';
   },

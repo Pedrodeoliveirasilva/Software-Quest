@@ -11,7 +11,7 @@ module.exports = function registrar(rota) {
   rota('POST', '/api/sair', ({ s }) => {
     if (s) {
       delete banco.dados.sessoes[s.token];
-      banco.gravar();
+      banco.alterar('sessoes', s.token);
     }
     return { ok: true };
   });

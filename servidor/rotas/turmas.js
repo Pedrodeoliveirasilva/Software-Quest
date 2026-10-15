@@ -2,20 +2,8 @@
 'use strict';
 const banco = require('../banco');
 const { falha } = require('../erros');
-const { agora, novoId, texto, normalizarCodigo, gerarCodigoTurma } = require('../util');
+const { agora, novoId, texto, normalizarCodigo, gerarCodigoTurma, resumoCodigo } = require('../util');
 const seg = require('../seguranca');
-
-/** Resumo público da turma, guardado no índice de códigos (usado no cadastro do aluno). */
-const resumoCodigo = (id, t) => ({
-  turmaId: id,
-  nome: t.nome,
-  escola: t.escola,
-  professorUid: t.professorUid,
-  professorNome: t.professorNome,
-  pesquisa: !!t.pesquisa,
-  fotos: !!t.fotos,
-  ativa: t.ativa !== false
-});
 
 module.exports = function registrar(rota) {
   rota('GET', '/api/turmas/codigo/:codigo', ({ params }) => {
@@ -53,7 +41,7 @@ module.exports = function registrar(rota) {
     };
     d.turmas[id] = t;
     d.codigos[codigo] = resumoCodigo(id, t);
-    banco.gravar();
+    banco.alterar('turmas', id);
     return { turma: { id, ...t } };
   });
 
@@ -71,11 +59,14 @@ module.exports = function registrar(rota) {
       // ao desativar as fotos, as fotos atuais dos alunos desta turma são removidas
       if (!t.fotos)
         Object.values(banco.dados.users).forEach(u => {
-          if (u.turmaId === params.id && u.avatar) u.avatar.foto = null;
+          if (u.turmaId === params.id && u.avatar && u.avatar.foto) {
+            u.avatar.foto = null;
+            banco.alterar('users', u.uid);
+          }
         });
     }
     banco.dados.codigos[t.codigo] = resumoCodigo(params.id, t);
-    banco.gravar();
+    banco.alterar('turmas', params.id);
     return { turma: { id: params.id, ...t } };
   });
 };

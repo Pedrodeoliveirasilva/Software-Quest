@@ -32,7 +32,7 @@ module.exports = function registrar(rota) {
     const email = Object.keys(contas).find(k => contas[k].uid === params.uid);
     Object.assign(contas[email], seg.protegerSenha(senha));
     seg.encerrarSessoesDe(params.uid);
-    banco.gravar();
+    banco.alterar('contas', email);
     return { ok: true };
   });
 
@@ -40,7 +40,7 @@ module.exports = function registrar(rota) {
     seg.exigirProfessor(s);
     const a = seg.alunoDoProfessor(s, params.uid);
     a.avatar = { ...(a.avatar || {}), foto: null };
-    banco.gravar();
+    banco.alterar('users', params.uid);
     return { ok: true };
   });
 };

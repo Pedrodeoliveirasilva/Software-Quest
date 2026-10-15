@@ -22,7 +22,7 @@ function senhaConfere(conta, senha) {
 function criarSessao(uid) {
   const token = crypto.randomBytes(24).toString('hex');
   banco.dados.sessoes[token] = { uid, criadaEm: Date.now() };
-  banco.gravar();
+  banco.alterar('sessoes', token);
   return token;
 }
 /** Lê o token do cabeçalho Authorization e devolve { token, uid } ou null. */
@@ -32,7 +32,7 @@ function sessaoDe(req) {
   if (!s) return null;
   if (Date.now() - s.criadaEm > cfg.VALIDADE_SESSAO_MS) {
     delete banco.dados.sessoes[m[1]];
-    banco.gravar();
+    banco.alterar('sessoes', m[1]);
     return null;
   }
   return { token: m[1], uid: s.uid };
@@ -40,7 +40,10 @@ function sessaoDe(req) {
 function encerrarSessoesDe(uid) {
   const sessoes = banco.dados.sessoes;
   Object.keys(sessoes).forEach(t => {
-    if (sessoes[t].uid === uid) delete sessoes[t];
+    if (sessoes[t].uid === uid) {
+      delete sessoes[t];
+      banco.alterar('sessoes', t);
+    }
   });
 }
 /** Dados da sessão entregues ao navegador. */
@@ -52,34 +55,90 @@ function infoSessao(uid) {
 }
 
 /* ---------- limites contra abuso ---------- */
-const ipDe = req =>
-  (cfg.ATRAS_DE_PROXY &&
-    String(req.headers['x-forwarded-for'] || '')
-      .split(',')[0]
-      .trim()) ||
-  req.socket.remoteAddress ||
-  '';
 
+/**
+ * IP do visitante. Atrás de um proxy (Render), o IP da conexão é o do proxy, então ele vem
+ * de um cabeçalho. O X-Forwarded-For pode trazer valores inventados pelo próprio visitante
+ * à esquerda, por isso:
+ *  1. usa o CF-Connecting-IP, que a Cloudflare (usada pelo Render) sempre sobrescreve;
+ *  2. se não houver, usa o último valor do X-Forwarded-For (o acrescentado pelo proxy).
+ * Mesmo assim, o IP serve só como proteção extra: o limite principal de senhas erradas é
+ * por conta (veja verificarLogin), e esse não depende de IP.
+ */
+function ipDe(req) {
+  if (cfg.ATRAS_DE_PROXY) {
+    const cf = String(req.headers['cf-connecting-ip'] || '').trim();
+    if (cf) return cf;
+    const lista = String(req.headers['x-forwarded-for'] || '')
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean);
+    if (lista.length) return lista[lista.length - 1];
+  }
+  return req.socket.remoteAddress || '';
+}
+
+/** Conta ocorrências por chave numa janela de tempo. Entradas antigas são descartadas sozinhas. */
 function contador(limite, janelaMs, mensagem) {
   const mapa = new Map();
+  let ultimaLimpeza = Date.now();
+  function limpar() {
+    const agora = Date.now();
+    if (agora - ultimaLimpeza < janelaMs) return;
+    ultimaLimpeza = agora;
+    for (const [k, c] of mapa) if (agora - c.inicio > janelaMs) mapa.delete(k);
+  }
   return {
-    verificar(ip) {
-      const c = mapa.get(ip);
+    verificar(chave) {
+      const c = mapa.get(chave);
       if (c && c.n >= limite && Date.now() - c.inicio < janelaMs) falha(429, 'auth/too-many-requests', mensagem);
     },
-    somar(ip) {
-      const c = mapa.get(ip);
-      if (!c || Date.now() - c.inicio > janelaMs) mapa.set(ip, { n: 1, inicio: Date.now() });
+    somar(chave) {
+      limpar();
+      const c = mapa.get(chave);
+      if (!c || Date.now() - c.inicio > janelaMs) mapa.set(chave, { n: 1, inicio: Date.now() });
       else c.n++;
+    },
+    zerar(chave) {
+      mapa.delete(chave);
     }
   };
 }
-const falhasDeLogin = contador(
-  15,
-  10 * 60 * 1000,
-  'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.'
+
+const L = cfg.LIMITES;
+// Senhas erradas numa mesma conta: o limite principal, que não depende de IP
+const falhasPorConta = contador(
+  L.falhasPorConta,
+  L.janelaLoginMs,
+  'Muitas tentativas erradas nesta conta. Espere alguns minutos e tente de novo.'
 );
-const cadastros = contador(60, 3600 * 1000, 'Muitos cadastros seguidos a partir desta rede. Tente de novo mais tarde.');
+// Senhas erradas a partir de um mesmo IP: bem mais alto, porque uma turma inteira costuma
+// sair pela mesma internet da escola
+const falhasPorIp = contador(
+  L.falhasPorIp,
+  L.janelaLoginMs,
+  'Muitas tentativas seguidas a partir desta rede. Espere alguns minutos e tente de novo.'
+);
+const cadastros = contador(
+  L.cadastrosPorIp,
+  3600 * 1000,
+  'Muitos cadastros seguidos a partir desta rede. Tente de novo mais tarde.'
+);
+const eventosPorMinuto = contador(L.eventosPorMinuto, 60 * 1000, 'Muitos registros em pouco tempo. Espere um pouco.');
+
+/** Antes de conferir a senha: bloqueia se a conta ou a rede passaram do limite de erros. */
+function verificarLogin(ip, conta) {
+  falhasPorConta.verificar(conta);
+  falhasPorIp.verificar(ip);
+}
+function falhaDeLogin(ip, conta) {
+  falhasPorConta.somar(conta);
+  falhasPorIp.somar(ip);
+}
+/** Login certo zera os erros da conta (os da rede continuam contando). */
+function loginCerto(conta) {
+  falhasPorConta.zerar(conta);
+}
 
 /* ---------- regras de acesso ---------- */
 function exigirProfessor(s) {
@@ -111,8 +170,11 @@ module.exports = {
   encerrarSessoesDe,
   infoSessao,
   ipDe,
-  falhasDeLogin,
+  verificarLogin,
+  falhaDeLogin,
+  loginCerto,
   cadastros,
+  eventosPorMinuto,
   exigirProfessor,
   exigirAluno,
   turmaDoProfessor,

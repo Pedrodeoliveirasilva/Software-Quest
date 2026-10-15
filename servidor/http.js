@@ -10,23 +10,41 @@ const seguranca = require('./seguranca');
 
 /* ---------- roteador ---------- */
 const rotas = [];
-/** Registra uma rota. Parâmetros no caminho usam ":nome", por exemplo /api/turmas/:id */
-function rota(metodo, padrao, fn) {
-  rotas.push({ metodo, re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'), fn });
+/**
+ * Registra uma rota. Parâmetros no caminho usam ":nome", por exemplo /api/turmas/:id
+ * opcoes.limite: tamanho máximo do corpo em bytes (padrão: cfg.LIMITE_CORPO_BYTES, pequeno).
+ * Só as rotas que recebem foto ou o perfil completo precisam de um limite maior.
+ */
+function rota(metodo, padrao, fn, opcoes = {}) {
+  rotas.push({
+    metodo,
+    re: new RegExp('^' + padrao.replace(/:(\w+)/g, '(?<$1>[^/]+)') + '$'),
+    fn,
+    limite: opcoes.limite || cfg.LIMITE_CORPO_BYTES
+  });
 }
 
-function lerCorpo(req) {
+const GRANDE_DEMAIS = () => new Falha(413, 'invalid-argument', 'Dados grandes demais.');
+
+function lerCorpo(req, limite) {
   return new Promise((ok, erro) => {
-    let tamanho = 0;
+    // Recusa logo quando o tamanho declarado já passa do limite
+    if (Number(req.headers['content-length']) > limite) {
+      req.resume(); // descarta o corpo sem guardá-lo, para conseguir responder
+      return erro(GRANDE_DEMAIS());
+    }
+    let tamanho = 0,
+      excedeu = false;
     const partes = [];
     req.on('data', c => {
       tamanho += c.length;
-      if (tamanho > cfg.LIMITE_CORPO_BYTES) {
-        erro(new Falha(413, 'invalid-argument', 'Dados grandes demais.'));
-        req.destroy();
-      } else partes.push(c);
+      if (tamanho > limite) {
+        excedeu = true;
+        partes.length = 0; // não guarda mais nada, só espera o fim para responder
+      } else if (!excedeu) partes.push(c);
     });
     req.on('end', () => {
+      if (excedeu) return erro(GRANDE_DEMAIS());
       if (!partes.length) return ok({});
       try {
         ok(JSON.parse(Buffer.concat(partes).toString('utf8')));
@@ -49,7 +67,7 @@ async function atenderApi(req, res, url) {
     const r = rotas.find(x => x.metodo === req.method && x.re.test(url.pathname));
     if (!r) falha(404, 'not-found', 'Rota não encontrada.');
     const params = r.re.exec(url.pathname).groups || {};
-    const corpo = ['POST', 'PUT', 'PATCH'].includes(req.method) ? await lerCorpo(req) : {};
+    const corpo = ['POST', 'PUT', 'PATCH'].includes(req.method) ? await lerCorpo(req, r.limite) : {};
     responder(
       res,
       200,

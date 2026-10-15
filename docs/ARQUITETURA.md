@@ -150,11 +150,13 @@ Assim, a missão pode abrir a trilha (`ctx.trilha.abrir`) sem conhecer os detalh
 ```
 servidor.js                  ponto de partida: junta os módulos e inicia
 servidor/
-├── config.js                porta, banco, limites (variáveis de ambiente)
+├── config.js                porta, banco, limites contra abuso (variáveis de ambiente)
+├── jogo.js                  regras do jogo no servidor: limpa o progresso e valida os eventos
 ├── erros.js                 erro com status HTTP (Falha) e atalhos
 ├── util.js                  validações puras (códigos, usuário, e-mail, foto)
-├── armazenamento.js         arquivo JSON ou PostgreSQL, com a mesma interface
-├── banco.js                 dados em memória e gravação agrupada
+├── armazenamento.js         escolhe onde guardar: arquivo JSON (padrão) ou PostgreSQL
+├── postgres.js              tabelas do PostgreSQL (Neon), gravação só do que mudou, migração
+├── banco.js                 dados em memória, marcação das mudanças e gravação agrupada
 ├── seguranca.js             senhas (scrypt), sessões, limites e regras de acesso
 ├── http.js                  roteador da API, leitura do corpo, entrega dos arquivos de public/
 ├── comandos.js              terminal: redefinir-senha, exportar, importar
@@ -166,7 +168,9 @@ servidor/
     └── painel.js            dados da turma, nova senha e remoção de foto
 ```
 
-Cada arquivo de rota exporta uma função que recebe `rota(metodo, caminho, funcao)` e registra suas rotas. A função de cada rota recebe `{ s, corpo, params, query, ip }`, onde `s` é a sessão de quem fez o pedido (ou `null`), e devolve o objeto que vai como resposta. Para recusar, chame `falha(status, codigo, mensagem)`.
+Os dados ficam em memória (`banco.dados`) e são lidos do armazenamento ao iniciar. **Toda rota que muda um registro precisa avisar qual foi**, com `banco.alterar(colecao, chave)`, por exemplo `banco.alterar('users', uid)` depois de mudar um aluno ou `banco.alterar('sessoes', token)` depois de apagar uma sessão (para apagar, remova da memória e avise do mesmo jeito). Eventos de pesquisa entram com `banco.novoEvento(evento)`. No PostgreSQL, só os registros avisados são enviados ao banco; um registro mudado sem aviso se perde quando o servidor reinicia. O teste "PostgreSQL" do `npm test` ajuda a pegar esse erro.
+
+Cada arquivo de rota exporta uma função que recebe `rota(metodo, caminho, funcao, opcoes)` e registra suas rotas. Por padrão, o corpo de cada pedido pode ter no máximo 8 KB; rotas que recebem foto passam `{ limite: cfg.LIMITE_CORPO_FOTO }`. A função de cada rota recebe `{ s, corpo, params, query, ip }`, onde `s` é a sessão de quem fez o pedido (ou `null`), e devolve o objeto que vai como resposta. Para recusar, chame `falha(status, codigo, mensagem)`.
 
 ## Fluxos do começo ao fim
 
@@ -194,7 +198,7 @@ Cada arquivo de rota exporta uma função que recebe `rota(metodo, caminho, func
 
 ### Adicionar uma lição à trilha
 
-Edite `public/js/models/dados/trilha.js`. No módulo desejado, acrescente um objeto à lista `licoes`, com `id` único, `titulo`, `minutos`, `blocos` e `verificacao`. Os tipos de bloco são `p`, `lista`, `exemplo`, `dica` e `codigo`. Para que ela só apareça depois da missão, use `aprofundamento: true`. Nenhum outro arquivo precisa mudar.
+Edite `public/js/models/dados/trilha.js`. No módulo desejado, acrescente um objeto à lista `licoes`, com `id` único, `titulo`, `minutos`, `blocos` e `verificacao`. Os tipos de bloco são `p`, `lista`, `exemplo`, `dica` e `codigo`. Para que ela só apareça depois da missão, use `aprofundamento: true`. Nenhum outro arquivo precisa mudar; só reinicie o servidor, que valida as lições pelo mesmo arquivo. No modo Firebase, confira o XP máximo em `firestore.rules` (o `npm test` indica o valor certo).
 
 ### Adicionar um desafio a uma missão
 
@@ -207,7 +211,7 @@ Edite `public/js/models/dados/missoes.js`. Na lista `desafios` da missão, acres
 | `selecionar`  | `enunciado`, `capacidade`, `itens` (com `id`, `texto`, `pontos`), `esperado` (ids corretos), `explicacao` |
 | `ordenar`     | `enunciado`, `itens` na ordem correta, `explicacao`                                                       |
 
-A correção já é feita pelo `MissaoModel`, e o painel do professor passa a mostrar o novo desafio sozinho.
+A correção já é feita pelo `MissaoModel`, e o painel do professor passa a mostrar o novo desafio sozinho. Reinicie o servidor para que ele aceite os eventos do desafio novo e, no modo Firebase, confira o XP máximo em `firestore.rules`.
 
 ### Criar um novo tipo de desafio
 
@@ -224,13 +228,13 @@ A correção já é feita pelo `MissaoModel`, e o painel do professor passa a mo
 
 ### Criar uma rota nova no servidor
 
-1. Escreva a rota no arquivo de `servidor/rotas/` do assunto, usando `seg.exigirAluno(s)` ou `seg.exigirProfessor(s)` para controlar o acesso.
+1. Escreva a rota no arquivo de `servidor/rotas/` do assunto, usando `seg.exigirAluno(s)` ou `seg.exigirProfessor(s)` para controlar o acesso. Se ela mudar dados, chame `banco.alterar(colecao, chave)` para cada registro alterado. Um campo novo no PostgreSQL também precisa de uma coluna em `servidor/postgres.js` (no esquema e nas conversões `paraLinha` e `daLinha`).
 2. Em `public/js/models/Repositorio.js`, acrescente o método correspondente ao objeto `Servidor` (e, se usar Firebase, ao objeto `Firebase`, com a regra equivalente em `firestore.rules`).
 3. Chame o método a partir de um controller.
 
 ### Mudar a pontuação ou os níveis
 
-Edite `public/js/config.js` (`pontosPorTentativa`, `maxTentativas`, `perdaQualidadePorErro`, `xpLicao`, `xpVerificacao`, `niveis`). Se mudar os níveis, atualize também `NIVEIS` em `servidor/config.js`, usado no ranking.
+Edite `public/js/config.js` (`pontosPorTentativa`, `maxTentativas`, `perdaQualidadePorErro`, `xpLicao`, `xpVerificacao`, `niveis`). O servidor lê esses mesmos valores (por `servidor/jogo.js`) para recalcular o XP e validar os eventos; basta reiniciá-lo. No modo Firebase, atualize também os números no início de `firestore.rules` (o `npm test` avisa se eles ficarem diferentes).
 
 ## Os estilos (pasta `public/css/`)
 

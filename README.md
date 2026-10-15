@@ -38,7 +38,7 @@ Ao iniciar, o servidor mostra também os endereços para os alunos, por exemplo 
 
 | Parte                  | O que faz                                                                                                                                                                                                                                                                                                                |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Contas de professor    | O professor se cadastra pelo próprio site, com nome, escola, e-mail e senha, e pode recuperar a senha por e-mail.                                                                                                                                                                                                        |
+| Contas de professor    | O professor se cadastra pelo próprio site, com nome, escola, e-mail e senha. No modo Firebase, recupera a senha por e-mail; com o `servidor.js`, quem administra o servidor a redefine pelo terminal.                                                                                                                    |
 | Turmas                 | Cada professor cria quantas turmas quiser. Cada turma recebe um código de acesso de 6 caracteres (por exemplo, `QX7-42B`), que pode ser aberto ou fechado para novos cadastros.                                                                                                                                          |
 | Cadastro do aluno      | O aluno informa o código da turma, cria um nome de usuário, um apelido e uma senha. Não é pedido nome completo nem e-mail. Em turmas marcadas como participantes de pesquisa, ele informa também o código de participante (P01 a P99) dos formulários de pré e pós-teste.                                                |
 | Moderação              | Apelidos e nomes de usuário com palavras ofensivas são recusados no cadastro (lista editável em `public/js/core/util.js`).                                                                                                                                                                                               |
@@ -66,7 +66,7 @@ public/                     o site (tudo o que o navegador recebe)
     ├── views/              telas (só desenham e repassam cliques)
     └── controllers/        coordenam views e models; aluno/ tem um controller por área
 servidor.js                 ponto de partida do servidor
-servidor/                   módulos do servidor: armazenamento, segurança, HTTP e rotas/
+servidor/                   módulos do servidor: armazenamento (JSON ou PostgreSQL), segurança, HTTP e rotas/
 test/                       testes automatizados (npm test)
 docs/ARQUITETURA.md         como o código está organizado e como alterá-lo
 .github/workflows/ci.yml    integração contínua no GitHub
@@ -78,19 +78,20 @@ O servidor só entrega aos visitantes o que está dentro de `public/`. O código
 
 ### Onde editar o quê
 
-| Quero mudar...                         | Arquivo                                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Lições da trilha                       | `public/js/models/dados/trilha.js`                                                         |
-| Missões, desafios, falas e itens       | `public/js/models/dados/missoes.js`                                                        |
-| Mapa do escritório                     | `public/js/models/dados/mapa.js`                                                           |
-| Pontuação, níveis e XP                 | `public/js/config.js`                                                                      |
-| Regras de recomendação de estudo       | `public/js/models/PerfilModel.js` (função `recomendacao`)                                  |
-| Palavras bloqueadas em apelidos        | `public/js/core/util.js` (`termosBloqueados`)                                              |
-| Pontuação usada no ranking do servidor | `servidor/config.js` (`NIVEIS`)                                                            |
-| Texto da política de privacidade       | `public/js/views/PrivacidadeView.js`                                                       |
-| Tamanho máximo das fotos               | `public/js/core/imagem.js` (tamanho da imagem) e `servidor/config.js` (`TAMANHO_MAX_FOTO`) |
-| Regras de acesso do servidor           | `servidor/seguranca.js` e os arquivos de `servidor/rotas/`                                 |
-| Visual                                 | `public/css/style.css`                                                                     |
+| Quero mudar...                       | Arquivo                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Lições da trilha                     | `public/js/models/dados/trilha.js`                                                         |
+| Missões, desafios, falas e itens     | `public/js/models/dados/missoes.js`                                                        |
+| Mapa do escritório                   | `public/js/models/dados/mapa.js`                                                           |
+| Pontuação, níveis e XP               | `public/js/config.js`                                                                      |
+| Regras de recomendação de estudo     | `public/js/models/PerfilModel.js` (função `recomendacao`)                                  |
+| Palavras bloqueadas em apelidos      | `public/js/core/util.js` (`termosBloqueados`)                                              |
+| Validação do progresso e dos eventos | `servidor/jogo.js` (usa as missões, lições e pontuação do site)                            |
+| Limites contra abuso                 | `servidor/config.js` (`LIMITES`, `MAX_EVENTOS_POR_ALUNO` e tamanhos máximos)               |
+| Texto da política de privacidade     | `public/js/views/PrivacidadeView.js`                                                       |
+| Tamanho máximo das fotos             | `public/js/core/imagem.js` (tamanho da imagem) e `servidor/config.js` (`TAMANHO_MAX_FOTO`) |
+| Regras de acesso do servidor         | `servidor/seguranca.js` e os arquivos de `servidor/rotas/`                                 |
+| Visual                               | `public/css/` (cores e fontes em `01-tokens.css`; cada tela em `telas/`)                   |
 
 Os arquivos do site são scripts comuns (sem `import`/`export`), carregados em ordem pelo `public/index.html`, respeitando as dependências: core, models, views, controllers e, por último, `main.js`. Assim o projeto não precisa de nenhuma etapa de compilação.
 
@@ -98,14 +99,16 @@ Os arquivos do site são scripts comuns (sem `import`/`export`), carregados em o
 
 O projeto segue as práticas usuais de equipes de software: formatação automática, verificação de código, testes automatizados e integração contínua. Para usar as ferramentas, rode `npm install` uma vez na pasta do projeto.
 
-| Comando          | O que faz                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| `npm start`      | inicia o servidor                                                                   |
-| `npm run dev`    | inicia o servidor e reinicia sozinho a cada alteração em arquivos do servidor       |
-| `npm test`       | roda os testes automatizados (regras do jogo e servidor)                            |
-| `npm run lint`   | verifica o JavaScript (ESLint) e o CSS (Stylelint)                                  |
-| `npm run format` | formata todos os arquivos (Prettier)                                                |
-| `npm run check`  | confere formatação, verificação e testes de uma vez; rode antes de enviar ao GitHub |
+| Comando       | O que faz                                                                     |
+| ------------- | ----------------------------------------------------------------------------- |
+| `npm start`   | inicia o servidor                                                             |
+| `npm run dev` | inicia o servidor e reinicia sozinho a cada alteração em arquivos do servidor |
+| `npm test`    | roda os testes automatizados (regras do jogo e servidor)                      |
+
+Para rodar os testes também com o PostgreSQL, defina `TESTE_DATABASE_URL` com um banco **vazio, só para testes** (por exemplo, um branch do Neon ou um PostgreSQL local): `TESTE_DATABASE_URL=postgresql://... npm test`. No GitHub Actions isso já acontece em todo envio, com um PostgreSQL temporário.
+| `npm run lint` | verifica o JavaScript (ESLint) e o CSS (Stylelint) |
+| `npm run format` | formata todos os arquivos (Prettier) |
+| `npm run check` | confere formatação, verificação e testes de uma vez; rode antes de enviar ao GitHub |
 
 A cada envio ao GitHub, o arquivo `.github/workflows/ci.yml` roda as mesmas verificações automaticamente, e o resultado aparece na aba **Actions** do repositório. No VS Code, as extensões **Prettier**, **ESLint**, **Stylelint** e **EditorConfig** aplicam as mesmas regras enquanto você digita.
 
@@ -124,7 +127,7 @@ Com esta opção, o jogo fica acessível pela internet, de qualquer lugar, com u
 ### 1. Enviar o projeto para o GitHub
 
 1. Crie uma conta em https://github.com e clique em **New repository**. Dê o nome `software-quest`; pode ser **Private**.
-2. Na página do repositório, clique em **uploading an existing file** e arraste **o conteúdo** da pasta `software-quest` (os arquivos e as pastas `css`, `js` e `.vscode`). Não envie as pastas `dados` e `node_modules`, se existirem.
+2. Na página do repositório, clique em **uploading an existing file** e arraste **o conteúdo** da pasta `software-quest` (os arquivos e as pastas `public`, `servidor`, `test`, `docs`, `.github` e `.vscode`). Não envie as pastas `dados` e `node_modules`, se existirem.
 3. Clique em **Commit changes**.
 
 Se você usa Git no terminal: `git init`, `git add .`, `git commit -m "Software Quest"` e siga as instruções do GitHub para enviar (`git remote add origin ...` e `git push`). O arquivo `.gitignore` já impede o envio dos dados e senhas locais.
@@ -145,7 +148,29 @@ Guarde esse endereço com cuidado: ele contém a senha do banco. Não o coloque 
 4. Clique em **Deploy Blueprint** e espere alguns minutos.
 5. Abra o serviço `software-quest` no painel: o endereço público aparece no topo, no formato `https://software-quest-xxxx.onrender.com`.
 
-Pronto. Abra o endereço, crie sua conta de professor, crie uma turma e passe o link e o código para os alunos. O servidor cria sozinho a tabela no banco na primeira vez.
+Pronto. Abra o endereço, crie sua conta de professor, crie uma turma e passe o link e o código para os alunos. O servidor cria sozinho as tabelas no banco na primeira vez.
+
+### O banco de dados no Neon
+
+Os dados ficam em tabelas de verdade, que você pode ver e consultar no próprio Neon (menu **Tables** para navegar e **SQL Editor** para consultar):
+
+| Tabela           | Conteúdo                                                                                               |
+| ---------------- | ------------------------------------------------------------------------------------------------------ |
+| `sq_professores` | Nome, escola, e-mail e foto de cada professor                                                          |
+| `sq_turmas`      | Turmas, com código de acesso, professor, se participam de pesquisa, se aceitam fotos e novos cadastros |
+| `sq_alunos`      | Usuário, apelido, turma, código de pesquisa, XP, qualidade, personagem e progresso (missões e lições)  |
+| `sq_eventos`     | Um registro por desafio, lição e missão: os dados da pesquisa, um campo por coluna                     |
+| `sq_contas`      | Login: e-mail (interno, no caso dos alunos) e senha protegida com scrypt (nunca em texto)              |
+| `sq_sessoes`     | Sessões abertas                                                                                        |
+
+O arquivo **[docs/consultas.sql](docs/consultas.sql)** traz consultas prontas para a análise da pesquisa: resumo por aluno, acerto de primeira por tema, desafios com mais erros, tempo por missão e tamanho do banco. Cole uma delas no SQL Editor, troque `'CODIGO'` pelo código da turma e baixe o resultado em CSV.
+
+O servidor carrega os dados das tabelas ao iniciar e responde a partir da memória, então o jogo continua rápido mesmo com o banco remoto. Cada mudança grava só o registro alterado, numa transação, e os eventos de pesquisa são apenas inseridos, nunca reescritos. Por isso:
+
+- **Mudanças feitas direto no banco** (pelo SQL Editor, por exemplo) só valem depois de reiniciar o serviço no Render (**Manual Deploy > Restart service**). Desligue o acesso dos alunos antes, porque o servidor pode sobrescrever uma linha que um aluno alterar nesse meio-tempo.
+- **Uma instância só:** o servidor deve rodar numa única instância, que é o caso do plano gratuito do Render. Não aumente o número de instâncias.
+
+**Atualizando de uma versão anterior:** se o seu banco já tinha dados da versão antiga (tudo num único JSON, na tabela `softwarequest_dados`), o servidor copia tudo para as tabelas novas na primeira vez que iniciar e guarda a tabela antiga como `softwarequest_dados_backup`. Faça um backup antes (veja abaixo). Depois de conferir que está tudo certo, você pode apagar a tabela de backup no Neon.
 
 ### Atualizar o jogo
 
@@ -163,7 +188,7 @@ DATABASE_URL="cole-a-connection-string" node servidor.js exportar backup.json
 $env:DATABASE_URL="cole-a-connection-string"; node servidor.js exportar backup.json
 ```
 
-- **Backup:** `node servidor.js exportar backup.json` copia todos os dados para um arquivo.
+- **Backup:** `node servidor.js exportar backup.json` copia todos os dados para um arquivo. O Neon também guarda um histórico do banco por alguns dias (veja **Backup & Restore** no painel do Neon).
 - **Levar os dados do servidor local para o online:** `node servidor.js importar dados/banco.json --substituir`, com a `DATABASE_URL` definida como acima. Depois, no painel do Render, clique em **Manual Deploy > Restart service** para o servidor carregar os dados importados. O mesmo vale para restaurar um backup.
 - **Senha esquecida de professor:** `node servidor.js redefinir-senha professor@email.com nova-senha`, também com a `DATABASE_URL` definida, seguido do restart do serviço.
 
@@ -234,7 +259,7 @@ O endereço aparece no final, no formato `https://software-quest-xxxx.web.app`. 
 
 ## Dados coletados para a pesquisa
 
-Com o `servidor.js`, os dados ficam em `dados/banco.json` (no computador) ou na tabela `softwarequest_dados` do PostgreSQL (online), com as mesmas regras de acesso aplicadas pelo servidor. No Firebase, ficam nas coleções abaixo:
+Com o `servidor.js`, os dados ficam em `dados/banco.json` (no computador) ou nas tabelas `sq_*` do PostgreSQL (online, veja [O banco de dados no Neon](#o-banco-de-dados-no-neon)), com as mesmas regras de acesso aplicadas pelo servidor. No Firebase, ficam nas coleções abaixo:
 
 | Coleção       | Conteúdo                                                                                                      | Quem pode ler                                                                   |
 | ------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -259,8 +284,11 @@ O sistema não coleta nome completo, e-mail nem outros dados pessoais dos alunos
 - **Senha esquecida de aluno no Firebase:** no servidor local, o professor redefine pelo painel. No modo Firebase isso não é possível no plano gratuito (exigiria Cloud Functions, do plano Blaze); o aluno pode criar uma conta nova na mesma turma com outro nome de usuário. No Firebase, professores recuperam a senha por e-mail.
 - **Servidor local só na rede da escola:** rodando no seu computador, o `servidor.js` usa HTTP simples e serve para a rede interna. Para acesso pela internet, publique no Render (que fornece HTTPS) ou use o Firebase.
 - **Contas de professor abertas:** qualquer pessoa pode criar uma conta de professor. Ela só vê as turmas que ela mesma criar, mas não há verificação de que é de fato um professor.
-- **Dados editáveis pelo aluno:** um aluno com conhecimento técnico poderia alterar o próprio XP pelo navegador e subir no ranking da turma. Para a pesquisa, use os dados da coleção `eventos`, que não podem ser alterados depois de criados. Validar a pontuação no servidor também exigiria Cloud Functions.
-- **Remoção de alunos:** o painel não remove contas. No Firebase, use o console (Authentication, `users` e `ranking`). No servidor local, apague o aluno em `dados/banco.json` com o servidor desligado.
+- **Validação do progresso e dos eventos:** com o `servidor.js`, o servidor recalcula o XP a partir das missões e lições, recusa missões fora de ordem e valida cada evento de pesquisa: só aceita desafios, lições e fases que existem, recalcula pontos, acerto de primeira e estrelas, e ele mesmo decide se o evento é uma repetição. Os eventos não podem ser alterados depois de criados. Mesmo assim, como as respostas certas ficam no código do site (`public/js/models/dados/missoes.js`), um aluno com conhecimento técnico poderia lê-las ou enviar registros de "acerto de primeira" sem jogar. Os dados continuam coerentes entre si, mas não provam que o aluno raciocinou sozinho; vale citar isso na metodologia. Garantir isso exigiria corrigir as respostas no servidor, sem enviá-las ao navegador.
+- **Validação no Firebase:** o `firestore.rules` limita o XP ao máximo do jogo e confere a coerência de cada evento (pontos e acerto de primeira de acordo com as tentativas), mas não consegue recalcular o XP nem decidir repetições, como o servidor faz. Teste as regras no **Rules Playground** antes de abrir a plataforma.
+- **Limites de tentativas:** depois de 10 senhas erradas seguidas numa mesma conta, ela fica bloqueada por 15 minutos (as outras contas continuam funcionando). Isso também vale se alguém errar de propósito a senha de um colega; nesse caso, basta esperar. Há ainda um limite bem mais alto por rede, que uma turma inteira na mesma escola não atinge.
+- **Editou missões ou lições?** O servidor lê `missoes.js`, `trilha.js` e `config.js` ao iniciar, para validar o progresso. Depois de editar esses arquivos, reinicie o servidor (no Render, isso acontece sozinho a cada envio ao GitHub).
+- **Remoção de alunos:** o painel não remove contas. No Firebase, use o console (Authentication, `users` e `ranking`). No servidor local, apague o aluno em `dados/banco.json` com o servidor desligado. No Neon, apague as linhas do aluno em `sq_alunos`, `sq_contas` e `sq_sessoes` pelo SQL Editor (os eventos dele em `sq_eventos` podem ficar para a pesquisa) e reinicie o serviço no Render.
 - **Missão abandonada:** se o aluno sair no meio de uma missão, ela recomeça do início. Os desafios já respondidos continuam registrados em `eventos`.
 - **Regras de segurança:** teste as regras do `firestore.rules` no **Rules Playground** do console do Firebase (aba Regras) antes de abrir a plataforma ao público.
 
@@ -278,4 +306,4 @@ O sistema não coleta nome completo, e-mail nem outros dados pessoais dos alunos
 
 ## Tecnologias
 
-HTML, CSS e JavaScript, sem frameworks nem etapa de compilação. Servidor em Node.js, com dados em arquivo JSON (local) ou PostgreSQL (online, pacote `pg`) e senhas protegidas com scrypt. Opcionalmente, Firebase Authentication e Cloud Firestore para publicar na internet. O mapa do jogo é desenhado com a API Canvas do navegador.
+HTML, CSS e JavaScript, sem frameworks nem etapa de compilação. Servidor em Node.js, com dados em arquivo JSON (local) ou em tabelas do PostgreSQL (online, no Neon, pacote `pg`) e senhas protegidas com scrypt. Opcionalmente, Firebase Authentication e Cloud Firestore para publicar na internet. O mapa do jogo é desenhado com a API Canvas do navegador.

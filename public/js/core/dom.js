@@ -20,8 +20,10 @@ SQ.dom.avatar = function ({ foto, cor, texto, tamanho = '', rotulo } = {}) {
   const inicial = String(texto || '?')
     .slice(0, 1)
     .toUpperCase();
+  // Só aceita cor no formato #RRGGBB: o valor vai para um atributo style e vem de outros alunos
+  const corSegura = /^#[0-9a-fA-F]{6}$/.test(cor || '') ? cor : '#6B3FD6';
   return html.elemento`
-    <span class="${classe}" style="background: ${cor || '#6B3FD6'}" ${html.atributos(acessibilidade)}>${foto ? html`<img src="${foto}" alt="" />` : inicial}</span>`;
+    <span class="${classe}" style="background: ${corSegura}" ${html.atributos(acessibilidade)}>${foto ? html`<img src="${foto}" alt="" />` : inicial}</span>`;
 };
 
 /** Aviso rápido que some sozinho depois de alguns segundos. */
