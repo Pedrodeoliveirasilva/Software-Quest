@@ -3,7 +3,8 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
-const { iniciarServidor, FOTO_TESTE } = require('./ajudantes');
+const { spawnSync } = require('node:child_process');
+const { iniciarServidor, FOTO_TESTE, RAIZ, usandoPostgres } = require('./ajudantes');
 
 /** Faz um GET enviando o caminho exatamente como escrito (sem resolver "..") e devolve o status. */
 function statusSemNormalizar(url, caminho) {
@@ -41,8 +42,18 @@ describe('Contas e sessões', () => {
   before(async () => (s = await iniciarServidor()));
   after(() => s.parar());
 
-  it('responde à verificação de saúde', async () => {
-    assert.equal((await s.api('GET', 'saude')).dados.ok, true);
+  it('responde à verificação de saúde, dizendo onde os dados estão', async () => {
+    const { dados } = await s.api('GET', 'saude');
+    assert.equal(dados.ok, true);
+    assert.equal(dados.armazenamento, usandoPostgres ? 'postgresql' : 'arquivo');
+  });
+
+  it('não inicia publicado (Render) sem DATABASE_URL, para não perder dados', () => {
+    const env = { ...process.env, RENDER_EXTERNAL_URL: 'https://exemplo.onrender.com', PORT: '0' };
+    delete env.DATABASE_URL;
+    const r = spawnSync(process.execPath, ['servidor.js'], { cwd: RAIZ, env, encoding: 'utf8', timeout: 10000 });
+    assert.equal(r.status, 1);
+    assert.match(r.stderr, /falta a variável DATABASE_URL/);
   });
 
   it('cadastra professor, recusa e-mail repetido e faz login', async () => {

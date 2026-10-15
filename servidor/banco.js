@@ -76,6 +76,8 @@ module.exports = {
     return dados;
   },
   descricao: armazenamento.descricao,
+  tipo: armazenamento.tipo,
+  diagnostico: () => armazenamento.diagnostico(),
   vazio,
 
   async carregar() {

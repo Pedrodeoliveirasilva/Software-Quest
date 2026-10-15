@@ -4,7 +4,9 @@ const banco = require('../banco');
 const { infoSessao } = require('../seguranca');
 
 module.exports = function registrar(rota) {
-  rota('GET', '/api/saude', () => ({ ok: true, versao: 2 }));
+  // Abra /api/saude no navegador para conferir a versão publicada e onde os dados estão
+  // ("postgresql" no Render com Neon; "arquivo" no computador)
+  rota('GET', '/api/saude', () => ({ ok: true, versao: 3, armazenamento: banco.tipo }));
 
   rota('GET', '/api/sessao', ({ s }) => ({ sessao: s ? infoSessao(s.uid) : null }));
 

@@ -150,6 +150,8 @@ Guarde esse endereço com cuidado: ele contém a senha do banco. Não o coloque 
 
 Pronto. Abra o endereço, crie sua conta de professor, crie uma turma e passe o link e o código para os alunos. O servidor cria sozinho as tabelas no banco na primeira vez.
 
+**Para conferir se está tudo ligado,** abra `https://seu-endereco.onrender.com/api/saude`. Deve aparecer `"versao":3` e `"armazenamento":"postgresql"`. Se aparecer outra versão, o Render ainda não publicou o código novo; se aparecer `"arquivo"`, falta a `DATABASE_URL`.
+
 ### O banco de dados no Neon
 
 Os dados ficam em tabelas de verdade, que você pode ver e consultar no próprio Neon (menu **Tables** para navegar e **SQL Editor** para consultar):
@@ -188,6 +190,7 @@ DATABASE_URL="cole-a-connection-string" node servidor.js exportar backup.json
 $env:DATABASE_URL="cole-a-connection-string"; node servidor.js exportar backup.json
 ```
 
+- **Verificar o banco:** `node servidor.js verificar-banco` conecta ao Neon, cria as tabelas que faltarem e mostra o banco, o endpoint (branch) e quantas linhas há em cada tabela.
 - **Backup:** `node servidor.js exportar backup.json` copia todos os dados para um arquivo. O Neon também guarda um histórico do banco por alguns dias (veja **Backup & Restore** no painel do Neon).
 - **Levar os dados do servidor local para o online:** `node servidor.js importar dados/banco.json --substituir`, com a `DATABASE_URL` definida como acima. Depois, no painel do Render, clique em **Manual Deploy > Restart service** para o servidor carregar os dados importados. O mesmo vale para restaurar um backup.
 - **Senha esquecida de professor:** `node servidor.js redefinir-senha professor@email.com nova-senha`, também com a `DATABASE_URL` definida, seguido do restart do serviço.
@@ -293,6 +296,15 @@ O sistema não coleta nome completo, e-mail nem outros dados pessoais dos alunos
 - **Regras de segurança:** teste as regras do `firestore.rules` no **Rules Playground** do console do Firebase (aba Regras) antes de abrir a plataforma ao público.
 
 ## Problemas comuns
+
+- **No Neon, `relação "sq_turmas" não existe` (ou `relation "sq_turmas" does not exist`):** as tabelas ainda não foram criadas no banco que o SQL Editor está mostrando. Siga esta ordem:
+  1. Abra `https://seu-endereco.onrender.com/api/saude`. Se não aparecer `"versao":3` e `"armazenamento":"postgresql"`, o código novo não está publicado: envie ao GitHub todos os arquivos do projeto (inclusive `servidor/postgres.js`) e espere o Render terminar a publicação.
+  2. No seu computador, rode `node servidor.js verificar-banco` com a `DATABASE_URL` do Render (veja [Backup e migração dos dados](#backup-e-migração-dos-dados)). O comando cria as tabelas que faltarem e mostra o **banco** e o **endpoint** a que a `DATABASE_URL` aponta.
+  3. No SQL Editor do Neon, escolha nos seletores do topo o mesmo **branch** (o do endpoint mostrado, em Branches > o branch > Computes) e o mesmo **banco**. É comum o editor abrir em outro branch ou banco.
+
+  Se preferir não usar o terminal, cole o arquivo [docs/esquema.sql](docs/esquema.sql) no SQL Editor, no mesmo banco e branch da `DATABASE_URL`, e clique em **Run**. Ele só cria o que falta e não apaga nada. Desative também a tradução automática do navegador no site do Neon: ela traduz os comandos SQL na tela (`SELECIONE`, `DE`...) e o texto copiado de lá deixa de funcionar.
+
+- **O Render mostra que a publicação falhou, com "falta a variável DATABASE_URL":** o servidor não inicia publicado sem banco, para não apagar dados. Em **Environment**, adicione `DATABASE_URL` com a connection string do Neon e salve.
 
 - **Tela "Inicie o servidor do Software Quest":** o servidor não está rodando ou a página foi aberta direto pelo arquivo. Aperte F5 no VS Code (ou rode `node servidor.js`) e acesse `http://localhost:3000`.
 - **Os alunos não conseguem abrir o endereço da rede:** confira se estão no mesmo Wi-Fi e se o firewall do computador permite o Node.js em redes privadas.

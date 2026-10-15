@@ -22,7 +22,11 @@ function armazenamentoArquivo() {
     fs.renameSync(tmp, cfg.ARQUIVO_DADOS); // troca atômica: o arquivo nunca fica pela metade
   }
   return {
+    tipo: 'arquivo',
     descricao: cfg.ARQUIVO_DADOS,
+    async diagnostico() {
+      return null;
+    },
     async carregar() {
       try {
         return JSON.parse(fs.readFileSync(cfg.ARQUIVO_DADOS, 'utf8'));

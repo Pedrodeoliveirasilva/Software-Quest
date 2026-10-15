@@ -13,6 +13,7 @@
 
    Como usar:
      node servidor.js                               inicia em http://localhost:3000
+     node servidor.js verificar-banco               cria as tabelas, se faltarem, e mostra o banco
      node servidor.js redefinir-senha <e-mail> <nova-senha>
      node servidor.js exportar <arquivo.json>       copia todos os dados (backup)
      node servidor.js importar <arquivo.json> --substituir
@@ -58,17 +59,21 @@ function mostrarEnderecos() {
   }
   console.log('');
   console.log('  Dados salvos em: ' + banco.descricao);
-  if (cfg.ENDERECO_PUBLICO && !cfg.DATABASE_URL) {
-    console.log('');
-    console.log('  ATENÇÃO: o servidor está publicado sem banco de dados (falta a variável DATABASE_URL).');
-    console.log('  Neste modo, contas e progresso são APAGADOS sempre que o serviço reinicia ou dorme.');
-    console.log('  No Render, abra Environment, adicione DATABASE_URL com a connection string do Neon e salve.');
-  }
   console.log('  Para encerrar, aperte Ctrl+C.');
   console.log('');
 }
 
 async function iniciar() {
+  // Publicado (Render) sem banco, tudo iria para um arquivo que some quando o serviço reinicia
+  // ou dorme. Melhor não iniciar e explicar o que falta.
+  if (cfg.ENDERECO_PUBLICO && !cfg.DATABASE_URL && !process.env.PERMITIR_SEM_BANCO) {
+    console.error('');
+    console.error('  ERRO: o servidor está publicado sem banco de dados (falta a variável DATABASE_URL).');
+    console.error('  Sem ela, contas e progresso seriam APAGADOS sempre que o serviço reiniciasse ou dormisse.');
+    console.error('  No Render, abra Environment, adicione DATABASE_URL com a connection string do Neon e salve.');
+    console.error('');
+    process.exit(1);
+  }
   try {
     await banco.carregar();
   } catch (e) {

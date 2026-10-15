@@ -178,6 +178,49 @@ describe('PostgreSQL', opcoes, () => {
     for (const c of consultas) await sql(c.replaceAll("'CODIGO'", `'${t.turma.codigo}'`), [], s.pasta);
   });
 
+  it('verificar-banco cria as tabelas que faltam e mostra onde está conectado', async () => {
+    const esquema = await novoEsquema();
+    const saida = execFileSync(process.execPath, ['servidor.js', 'verificar-banco'], {
+      cwd: RAIZ,
+      env: { ...process.env, DATABASE_URL: urlDoEsquema(esquema) },
+      encoding: 'utf8'
+    });
+    assert.match(saida, /banco: +\S+/);
+    assert.match(saida, /sq_turmas +0 linha\(s\)/);
+    assert.match(saida, /Tudo certo/);
+    const { rows } = await sql('SELECT count(*)::int AS n FROM sq_turmas', [], esquema);
+    assert.equal(rows[0].n, 0);
+  });
+
+  it('docs/esquema.sql cria as mesmas tabelas, e a migração funciona depois dele', async () => {
+    const arquivo = fs.readFileSync(path.join(RAIZ, 'docs', 'esquema.sql'), 'utf8');
+    const { ESQUEMA } = require('../servidor/postgres');
+    assert.ok(arquivo.endsWith(ESQUEMA.trimStart()), 'docs/esquema.sql precisa ser igual ao esquema do servidor');
+
+    // Tabelas criadas à mão pelo SQL Editor, com os dados antigos ainda na tabela da versão anterior
+    const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'sq-antigo-'));
+    const antigo = await iniciarServidorArquivo(pasta);
+    const t = await prepararTurma(antigo.api);
+    await antigo.parar();
+    const esquema = await novoEsquema();
+    await sql(arquivo, [], esquema);
+    await sql('CREATE TABLE softwarequest_dados (id text PRIMARY KEY, dados jsonb NOT NULL)', [], esquema);
+    await sql(
+      "INSERT INTO softwarequest_dados VALUES ('principal', $1)",
+      [fs.readFileSync(path.join(pasta, 'banco.json'), 'utf8')],
+      esquema
+    );
+
+    const s = await iniciarServidor(esquema);
+    const login = await s.api('POST', 'login/aluno', {
+      codigoTurma: t.turma.codigo,
+      usuario: 'ana',
+      senha: 'senha123'
+    });
+    await s.parar();
+    assert.equal(login.status, 200);
+  });
+
   it('exporta e importa todos os dados pelo terminal', async () => {
     const s = await iniciarServidor();
     const t = await prepararTurma(s.api);

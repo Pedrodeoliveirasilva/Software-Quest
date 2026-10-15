@@ -416,6 +416,22 @@ function prepararParaImportar(d) {
   return { ...d, turmas, users, eventos };
 }
 
+/**
+ * Banco e endpoint do endereço de conexão, sem a senha, para conferir no painel do Neon.
+ * No Neon, o host começa com o id do endpoint (ep-...), que identifica o branch.
+ */
+function descreverConexao(url) {
+  try {
+    const u = new URL(url);
+    const endpoint = u.hostname.split('.')[0].replace(/-pooler$/, '');
+    return { banco: decodeURIComponent(u.pathname.slice(1)) || '(padrão)', host: u.hostname, endpoint };
+  } catch (e) {
+    return { banco: '?', host: '?', endpoint: '?' };
+  }
+}
+
+const TABELAS_SQ = ['sq_professores', 'sq_turmas', 'sq_alunos', 'sq_contas', 'sq_sessoes', 'sq_eventos', 'sq_meta'];
+
 function armazenamentoPostgres(url) {
   let Pool;
   try {
@@ -462,8 +478,29 @@ function armazenamentoPostgres(url) {
     console.log('  Pronto. A tabela antiga foi mantida como softwarequest_dados_backup.');
   }
 
+  const conexao = descreverConexao(url);
+
   return {
-    descricao: 'banco PostgreSQL (DATABASE_URL), tabelas sq_*',
+    tipo: 'postgresql',
+    descricao: `PostgreSQL, banco "${conexao.banco}" em ${conexao.host} (tabelas sq_*)`,
+    conexao,
+
+    /** Onde o servidor está conectado e o que existe lá (comando verificar-banco). */
+    async diagnostico() {
+      const info = (
+        await pool.query(
+          "SELECT current_database() AS banco, current_user AS usuario, current_schema() AS esquema, split_part(version(), ' ', 2) AS versao"
+        )
+      ).rows[0];
+      const contagens = {};
+      for (const t of TABELAS_SQ) {
+        const existe = (await pool.query('SELECT to_regclass($1) IS NOT NULL AS e', [t])).rows[0].e;
+        contagens[t] = existe ? (await pool.query(`SELECT count(*)::int AS n FROM ${t}`)).rows[0].n : null;
+      }
+      const backup = (await pool.query("SELECT to_regclass('softwarequest_dados_backup') IS NOT NULL AS e")).rows[0].e;
+      const antiga = (await pool.query("SELECT to_regclass('softwarequest_dados') IS NOT NULL AS e")).rows[0].e;
+      return { ...info, ...conexao, contagens, backup, antiga };
+    },
 
     async carregar() {
       await transacao(pool, async c => {
@@ -517,4 +554,4 @@ function armazenamentoPostgres(url) {
   };
 }
 
-module.exports = { armazenamentoPostgres, prepararParaImportar };
+module.exports = { armazenamentoPostgres, prepararParaImportar, descreverConexao, ESQUEMA };
